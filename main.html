@@ -1,0 +1,2923 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intel Skylake 零件供貨風險互動儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals with Risk-based Accents -->
+    <!-- Application Structure Plan: A three-part strategic dashboard. 1) An executive summary dashboard for an immediate high-level overview of risks using KPIs and a donut chart. 2) An interactive and filterable component database allowing users to drill down into specific part details. 3) A clear, tabbed action plan section outlining strategic responses. This structure transforms the linear report into a task-oriented decision support tool, guiding the user from understanding the problem to exploring details and finding solutions. -->
+    <!-- Visualization & Content Choices: Risk Distribution -> Donut Chart (Chart.js) for instant proportional understanding. Component Details -> Interactive HTML Table with JS filters/search and expandable rows for user-driven exploration. Action Plans -> Tabbed HTML/JS interface to organize complex recommendations into digestible, prioritized steps. This approach avoids information overload and supports a logical decision-making flow. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8f9fa; /* Light Gray Background */
+        }
+        .risk-high { background-color: #fee2e2; color: #991b1b; }
+        .risk-medium { background-color: #fef9c3; color: #854d0e; }
+        .risk-low { background-color: #dcfce7; color: #166534; }
+        .risk-high-border { border-left-color: #ef4444; }
+        .risk-medium-border { border-left-color: #f59e0b; }
+        .risk-low-border { border-left-color: #22c55e; }
+        .details-row {
+            transition: all 0.3s ease-in-out;
+        }
+        .tab-active {
+            border-color: #2563eb;
+            color: #2563eb;
+            font-weight: 600;
+        }
+        .tab-inactive {
+            border-color: transparent;
+            color: #6b7280;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 380px;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <header class="text-center mb-12">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Intel Skylake 平台零件供貨風險</h1>
+            <h2 class="text-xl md:text-2xl font-semibold text-blue-700">互動式分析儀表板</h2>
+            <p class="mt-4 max-w-4xl mx-auto text-slate-600">
+                本儀表板旨在將靜態的供應鏈風險報告轉化為一個動態的決策支援工具。您可以從宏觀的儀表板掌握整體風險分佈，透過互動式資料庫深入查詢特定零件，並在行動方案中找到清晰的應對策略。
+            </p>
+        </header>
+
+        <!-- Section 1: Executive Dashboard -->
+        <section id="dashboard" class="mb-16 p-6 bg-white rounded-xl shadow-lg">
+            <h3 class="text-2xl font-bold text-slate-800 border-l-4 border-blue-600 pl-4 mb-6">情勢摘要：核心發現</h3>
+            <p class="text-slate-600 mb-8">
+                分析顯示，Skylake 平台已進入其產品生命週期末期，其供應鏈正面臨系統性且高度嚴峻的斷鏈風險。此風險不僅來自單一零件的停產，而是源於整個支援平台技術生態系統的瓦解。
+            </p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Chart -->
+                <div class="md:col-span-2 lg:col-span-2 p-4 rounded-lg bg-slate-50">
+                    <h4 class="text-lg font-semibold text-center mb-4 text-slate-700">零件風險等級分佈</h4>
+                    <div class="chart-container">
+                        <canvas id="riskDistributionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- KPIs and Key Findings -->
+                <div class="md:col-span-2 lg:col-span-2 space-y-4">
+                     <div class="p-5 rounded-lg bg-red-50 border border-red-200">
+                        <h4 class="font-bold text-red-800 text-lg">⚠️ 系統性風險：平台生態系瓦解</h4>
+                        <p class="text-red-700 mt-1">關鍵供應商 (如 Infineon, Samsung) 正策略性地退出對 Skylake 平台的支援，導致電源管理、記憶體等核心子系統面臨系統性斷鏈，單純尋找替代品已非長久之計。</p>
+                    </div>
+                     <div class="p-5 rounded-lg bg-yellow-50 border border-yellow-200">
+                        <h4 class="font-bold text-yellow-800 text-lg">💰 隱性成本：高昂的重新設計代價</h4>
+                        <p class="text-yellow-700 mt-1">大量所謂的「替代品」並非 Pin-to-Pin 相容，需要投入可觀的工程資源進行電路板重新設計、韌體驗證與安規重認，其成本遠超物料本身。</p>
+                    </div>
+                     <div class="p-5 rounded-lg bg-blue-50 border border-blue-200">
+                        <h4 class="font-bold text-blue-800 text-lg">🔧 維運挑戰：「長尾效應」下的服務風險</h4>
+                        <p class="text-blue-700 mt-1">供應鏈的斷裂不僅影響生產，更嚴重威脅對已售產品的維修承諾。若無足夠維修備料，將面臨無法履行保固、損害商譽的風險。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Interactive Component Database -->
+        <section id="database" class="mb-16 p-6 bg-white rounded-xl shadow-lg">
+            <h3 class="text-2xl font-bold text-slate-800 border-l-4 border-blue-600 pl-4 mb-6">互動式零件資料庫</h3>
+            <p class="text-slate-600 mb-8">
+                此處提供所有評估零件的詳細清單。您可以使用下方的篩選器來快速尋找特定零件，或點擊任一零件列以展開其詳細的風險分析、替代方案評估與建議行動。
+            </p>
+            <!-- Filters -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 p-4 bg-slate-50 rounded-lg">
+                <div>
+                    <label for="riskFilter" class="block text-sm font-medium text-gray-700">風險等級</label>
+                    <select id="riskFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="all">所有</option>
+                        <option value="高">高風險</option>
+                        <option value="中">中度風險</option>
+                        <option value="低">低風險</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="subsystemFilter" class="block text-sm font-medium text-gray-700">功能子系統</label>
+                    <select id="subsystemFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="all">所有</option>
+                        <option value="Intel晶片">Intel晶片</option>
+                        <option value="電源管理">電源管理</option>
+                        <option value="記憶體">記憶體</option>
+                        <option value="網路介面">網路介面</option>
+                        <option value="橋接晶片">橋接晶片</option>
+                        <option value="音訊">音訊</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div class="col-span-2">
+                    <label for="searchFilter" class="block text-sm font-medium text-gray-700">搜尋料號/品名</label>
+                    <input type="text" id="searchFilter" placeholder="例如: WGI211AT" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                </div>
+            </div>
+
+            <!-- Component Table -->
+            <div class="overflow-x-auto">
+                <div class="min-w-full bg-white rounded-lg">
+                    <!-- Table Header -->
+                    <div class="grid grid-cols-12 gap-4 font-semibold text-sm text-slate-600 bg-slate-100 p-4 rounded-t-lg">
+                        <div class="col-span-3">料號 / 品名</div>
+                        <div class="col-span-2">製造商</div>
+                        <div class="col-span-2">功能子系統</div>
+                        <div class="col-span-2">生命週期</div>
+                        <div class="col-span-3 text-center">風險等級</div>
+                    </div>
+                    <!-- Table Body -->
+                    <div id="component-table-body" class="divide-y divide-slate-200">
+                        <!-- JS will populate this -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Strategic Action Plan -->
+        <section id="action-plan" class="p-6 bg-white rounded-xl shadow-lg">
+            <h3 class="text-2xl font-bold text-slate-800 border-l-4 border-blue-600 pl-4 mb-6">策略性行動方案</h3>
+            <p class="text-slate-600 mb-8">
+                基於風險評估結果，此處提供一套分級、分階段的具體行動方案。請依據風險等級切換分頁，查看對應的應對策略與長期維運建議。
+            </p>
+            <div>
+                <!-- Tabs -->
+                <div class="border-b border-gray-200 mb-6">
+                    <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                        <button onclick="changeTab('high-risk')" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tab-active">🔴 高風險零件應對計畫</button>
+                        <button onclick="changeTab('medium-risk')" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tab-inactive">🟡 中度風險零件監控計畫</button>
+                        <button onclick="changeTab('long-term')" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tab-inactive">🔵 長期產品生命週期策略</button>
+                    </nav>
+                </div>
+
+                <!-- Tab Content -->
+                <div id="tab-content">
+                    <div id="high-risk-content" class="tab-panel">
+                        <h4 class="text-xl font-semibold text-red-700 mb-4">緊急應對：雙軌並行，確保供應</h4>
+                        <p class="mb-6 text-slate-600">對於已停產且替代方案複雜或不存在的零件，必須立即採取行動，同步處理短期供應與長期解決方案。</p>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-red-50 p-6 rounded-lg">
+                                <h5 class="font-bold text-lg mb-2">案例一：無替代品 (如 Broadcom USB3380)</h5>
+                                <ol class="list-decimal list-inside space-y-2 text-slate-700">
+                                    <li><strong class="font-semibold">緊急庫存確保 (1-2 週):</strong> 立即聯繫 EOL 元件專家通路商，不計代價搜尋並收購市場所有剩餘庫存，為短期生產爭取時間。</li>
+                                    <li><strong class="font-semibold">替代方案尋源 (1-4 週):</strong> 指派資深工程師，研究市場上所有可行的替代橋接晶片，篩選 2-3 個來自具備長期供貨計畫的供應商之候選方案。</li>
+                                    <li><strong class="font-semibold">工程驗證導入 (2-6 個月):</strong> 根據所選方案，啟動正式的電路板重新設計 (Re-spin) 專案，包含完整的軟硬體驗證流程。</li>
+                                </ol>
+                            </div>
+                            <div class="bg-red-50 p-6 rounded-lg">
+                                <h5 class="font-bold text-lg mb-2">案例二：替代品複雜 (如 Infineon PX3517)</h5>
+                                 <ol class="list-decimal list-inside space-y-2 text-slate-700">
+                                    <li><strong class="font-semibold">執行最終採購 LTB (1-4 週):</strong> 根據未來 18-24 個月的生產預測，精確計算 LTB 需求量，並立即下達最終採購訂單。</li>
+                                    <li><strong class="font-semibold">長期方案驗證 (1-6 個月):</strong> 立即啟動對非 P2P 方案 (如 Renesas) 的全面驗證，使其成為可隨時導入的合格方案。避免採用本身也瀕臨停產的 P2P 方案作為長期解。</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="medium-risk-content" class="tab-panel hidden">
+                        <h4 class="text-xl font-semibold text-yellow-700 mb-4">主動管理，防患未然</h4>
+                        <p class="mb-6 text-slate-600">對於狀態為「NRND」或存在「P2P 但有差異」的零件，策略核心在於主動規劃與驗證，而非被動等待問題發生。</p>
+                        <div class="bg-yellow-50 p-6 rounded-lg">
+                            <h5 class="font-bold text-lg mb-2">案例：Intel WGI211AT (P2P 但有差異)</h5>
+                             <ol class="list-decimal list-inside space-y-3 text-slate-700">
+                                <li><strong class="font-semibold">計算橋接庫存:</strong> 計算足以支撐 6-9 個月驗證週期的 LTB 庫存量並下單。</li>
+                                <li><strong class="font-semibold">啟動全面驗證專案:</strong> 立即採購替代品樣品 (`WGI210AT`)，並進行包含硬體電氣特性、軟體驅動程式、系統性能與功能相容性的完整驗證。</li>
+                                <li><strong class="font-semibold">目標:</strong> 在 LTB 庫存耗盡前，完成所有驗證，使替代品成為一個合格的、可隨時進行滾動變更的物料。</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <div id="long-term-content" class="tab-panel hidden">
+                        <h4 class="text-xl font-semibold text-blue-700 mb-4">建立長期維運機制，從根本解決問題</h4>
+                        <p class="mb-6 text-slate-600">為避免未來在其他產品線上重蹈覆轍，公司應建立制度化的產品生命週期維護策略。</p>
+                        <div class="space-y-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h5 class="font-bold">1. 制定「Skylake 產品線日落計畫」</h5>
+                                <p class="text-slate-700">管理層應基於本報告，制定正式的產品退役路線圖，規劃在 2-3 年內引導客戶過渡到基於現代化平台的新一代產品。</p>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h5 class="font-bold">2. 建立獨立的「維修服務庫存」</h5>
+                                <p class="text-slate-700">LTB 採購必須明確區分「生產用料」和「服務用料」。根據已售產品的保固年限，獨立計算並採購足夠的維修備料，以確保能履行對客戶的長期服務承諾。</p>
+                            </div>
+                             <div class="bg-blue-50 p-4 rounded-lg">
+                                <h5 class="font-bold">3. 成立常設的「停產管理小組」</h5>
+                                <p class="text-slate-700">建立跨職能團隊，定期審核 BOM，主動監控 PCN/EOL 通知，統一管理所有與零件停產相關的應對專案。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+<script>
+// Components data will be loaded from external JSON file
+let components = [];
+const components_old = 
+[
+    {
+        "partNumber": "1410020328",
+        "description": "(DEL20)IC ALC892-GR Audio Codec SMD LQFP 48P",
+        "manufacturer": "瑞昱半導體股份有限公司",
+        "subsystem": "音訊",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2020/12/23 停產 (EOL)。此為舊款音訊編解碼器，已被市場淘汰。",
+        "alternatives": "官方建議的 B2B 替代品為 1410021134。",
+        "action": "立即確認替代品 1410021134 的導入可行性。若無法導入，需進行最後採購 (LTB) 以滿足剩餘需求。"
+    },
+    {
+        "partNumber": "1410020328-11",
+        "description": "(DEL20)IC ALC892-CG Audio Codec SMD LQFP 48P",
+        "manufacturer": "瑞昱半導體股份有限公司",
+        "subsystem": "音訊",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2020/12/23 停產 (EOL)。此為舊款音訊編解碼器。",
+        "alternatives": "官方建議的 B2B 替代品為 1410021134。",
+        "action": "立即對現有庫存進行盤點，並啟動替代品 1410021134 的驗證與導入流程。"
+    },
+    {
+        "partNumber": "1410021134",
+        "description": "IC ALC888S-VD2-GR 7.1+2 Channel HD SMD LQFP 48P",
+        "manufacturer": "瑞昱半導體股份有限公司",
+        "subsystem": "音訊",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2032 年底。作為 ALC892 系列的主要替代方案。",
+        "alternatives": "提供多種非 P2P 或功能不完全的替代方案，如 1410031277-01 (P2P 但無 LDO 功能) 及其他需重新設計的方案。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410029248-01",
+        "description": "IC CM6530N USB audio controller QFN 48P",
+        "manufacturer": "驊訊電子企業股份有限公司",
+        "subsystem": "音訊",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2023 年底。此為 USB 音訊控制器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "生命週期即將結束，建議在 2023 年初開始尋找下一代解決方案。目前維持標準庫存監控。"
+    },
+    {
+        "partNumber": "1750299010",
+        "description": "BATTERY HOLDER 24.9*23.4*8.9 CR2032 BH800.4GG",
+        "manufacturer": "尹碩有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，預計供貨至 2026 年底。此為標準電池座。",
+        "alternatives": "B2B 替代品為 1760000571。",
+        "action": "無需立即行動。可在 2025 年前評估導入替代品 1760000571。"
+    },
+    {
+        "partNumber": "1651002531-01",
+        "description": "DIMM DDR3 240P orange DIP 15u\" ATH4017-P3E-4F",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "記憶體",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2026 年底。此為 DDR3 DIMM 連接器。",
+        "alternatives": "無直接 B2B 替代品，需參考 KCC 推薦列表尋找適用於新設計的料號。",
+        "action": "監控庫存與交期。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "XATJ-M3ST2GMJCLPCK",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "宜鼎國際",
+        "subsystem": "記憶體",
+        "lifecycle": "Conditional Approve",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為有條件批准，表示供應或規格可能存在不確定性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "XC102326-DR3L4GTR",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "創見資訊",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y4ASA20002",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "威剛科技",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y4ASA20003",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "威剛科技",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y4ASA20006",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "SMART Modular Technologies",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y4ASA20007",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "威剛科技",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y4ASA20008",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "威剛科技",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y4P3260013",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "創見資訊",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y5A10A3023",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "創見資訊",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y5A10A3024",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "創見資訊",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y5A10A3046",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "創見資訊",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y5A10A3058",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "創見資訊",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y5A10AT000-96",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "創見資訊",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y5ASA30012",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "金士頓科技",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y5ASA30013",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "金士頓科技",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y5ASA30014",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "金士頓科技",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y5ASA30017",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "SMART Modular Technologies",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y5ASA30018",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "SMART Modular Technologies",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y5ASA30019",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "SMART Modular Technologies",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "Y5ASA30020",
+        "description": "DDR3L-1600 / DDR4-2133 Module",
+        "manufacturer": "SMART Modular Technologies",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "中",
+        "details": "此為記憶體模組，狀態為料號發布，但被標記為中度風險，可能因供應來源或規格特殊性。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控供應商供貨狀態與市場價格。確認此料號的具體風險來源，並預先尋找多家合格供應商。"
+    },
+    {
+        "partNumber": "1410027203-02",
+        "description": "IC IM4G08D4GBBG-075 DDR4-2666 4Gb FBGA 78P",
+        "manufacturer": "Intelligent Memory Limited",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Approve",
+        "risk": "中",
+        "details": "供應穩定，生命週期預計至 2029 年底。但被標記為中度風險，可能因供應商規模或市場能見度。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "監控供應商動態與市場供貨情況。可考慮尋找來自三星/美光/海力士的同規格料號作為備案。"
+    },
+    {
+        "partNumber": "1410027232-01",
+        "description": "(DEL24)IC K4A8G085WB-BCRC DDR4-2400 8GB FBGA 78P",
+        "manufacturer": "台灣三星電子股份有限公司",
+        "subsystem": "記憶體",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2024/05/08 停產 (EOL)。三星已發布停產通知 (PCN)。",
+        "alternatives": "P2P 替代品 K4A8G085WC-BCTD (2666Mbps) 和 1410034375-01 (3200Mbps, 工規) 存在，但因速度與晶粒不同，需重新驗證。",
+        "action": "立即對 K4A8G085WB-BCRC 進行最後採購 (LTB)。同步啟動對新晶粒替代品 K4A8G085WC-BCTD 的完整驗證流程。"
+    },
+    {
+        "partNumber": "1410027864-01",
+        "description": "(DEL24)IC K4A4G165WE-BCRC DDR4-2400 4Gb FBGA 96P",
+        "manufacturer": "台灣三星電子股份有限公司",
+        "subsystem": "記憶體",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2024/01/05 停產 (EOL)。PCN 確認停產並指定替代品。",
+        "alternatives": "P2P 替代品 1410029964-11 (DDR4-3200) 存在，但因速度與晶粒不同，需重新驗證。",
+        "action": "立即對 K4A4G165WE-BCRC 進行 LTB。啟動對新晶粒替代品 1410029964-11 的驗證。"
+    },
+    {
+        "partNumber": "1410029964-11",
+        "description": "IC K4A4G165WG-BCWE DDR4-3200 4Gb FBGA 96P",
+        "manufacturer": "台灣三星電子股份有限公司",
+        "subsystem": "記憶體",
+        "lifecycle": "NRND",
+        "risk": "高",
+        "details": "狀態為 NRND (不推薦用於新設計)，預計 2026/06/30 停產。此料號本身生命週期有限。",
+        "alternatives": "P2P 替代方案為華邦的 W664GG6RB-06。",
+        "action": "在導入此料號的同時，應立即規劃並啟動對下一代記憶體顆粒 (如華邦方案) 的驗證計畫，以應對其短期 EOL 風險。"
+    },
+    {
+        "partNumber": "1410030452-01",
+        "description": "(DEL22)DDR4 MT40A2G8JC-062E:E 3200 2Gbx8 0095",
+        "manufacturer": "美光半導體公司",
+        "subsystem": "記憶體",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2022/05/24 停產 (EOL)。Micron PCN 確認停產且無官方 P2P 替代品。",
+        "alternatives": "官方 B2B 替代品為 1410035332-01，需進行導入評估。",
+        "action": "立即搜尋全球庫存以應對短期需求。同時，啟動對替代品 1410035332-01 或其他製造商（如三星/海力士）同規格產品的驗證。"
+    },
+    {
+        "partNumber": "1410031136-11",
+        "description": "IC K4A8G085WG-BCWE DDR4-3200 1Gx8 FBGA 78P",
+        "manufacturer": "台灣三星電子股份有限公司",
+        "subsystem": "記憶體",
+        "lifecycle": "NRND",
+        "risk": "高",
+        "details": "狀態為 NRND，預計 2026/06/30 停產。此為高密度 DDR4 記憶體顆粒。",
+        "alternatives": "存在多個 P2P 替代方案，包括美光 (Micron) 的 1410034375-01 (工規) 和 Alliance Memory 的 AS4C1G8D4B-62BCN。",
+        "action": "此料號風險高且生命週期短。應立即啟動對美光或 Alliance Memory 替代方案的驗證，並規劃導入時程。"
+    },
+    {
+        "partNumber": "1651002525-01",
+        "description": "DIMM DDR4 288P BLACK DIP AH08817-A9B1-4F",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "記憶體",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2026 年底。此為 DDR4 DIMM 連接器。",
+        "alternatives": "無直接 B2B 替代品，需參考 KCC 推薦列表尋找適用於新設計的料號。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1651002528-01",
+        "description": "DIMM DDR4 288P DIP AH08817-A9L1-4F BLUE",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "記憶體",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2026 年底。此為 DDR4 DIMM 連接器。",
+        "alternatives": "無直接 B2B 替代品，需參考 KCC 推薦列表尋找適用於新設計的料號。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410025764-01",
+        "description": "IC CSD95492QVM 20A VR13 Power Stage SMD VSON 18P",
+        "manufacturer": "德州儀器工業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，但生命週期預計至 2034 年底。此為 TI 的 Power Stage。",
+        "alternatives": "無 P2P 替代品。可考慮 Non-P2P 的 1410030618-01 (50A)。",
+        "action": "監控庫存與交期。雖然生命週期長，但 NRND 狀態表示不建議用於新設計。新專案應尋找其他推薦料號。"
+    },
+    {
+        "partNumber": "1410025767-01",
+        "description": "IC CSD95375Q4M 15A VR13 Power Stage SMD SON 8P",
+        "manufacturer": "德州儀器工業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2034 年底。此為 TI 的 Power Stage。",
+        "alternatives": "存在多個 P2P 替代品，如 1410027337-01 (30A) 和 1410023703-02 (25A)。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410025838-01",
+        "description": "（DEL18）IC TDA21321 50A DrBlade LG-WIQFN-38-1",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2018/12/20 停產 (EOL)，為早期停產料件。",
+        "alternatives": "無官方 P2P 替代品。可考慮的 Non-P2P 方案有 1410026550-02 (60A, NRND) 或 1410028757-01 (60A, NRND)，但皆需重新設計。",
+        "action": "立即搜尋全球庫存。啟動專案，尋找並驗證其他製造商的同級別 Power Stage 產品，預期需進行電路板重新設計。"
+    },
+    {
+        "partNumber": "1410025892-01",
+        "description": "(DEL18) TDA21232 4.5~16V 55A LG-UIQFN-32-2 31",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "預計於 2024/11/01 停產 (EOL)。此為 55A Power Stage。",
+        "alternatives": "無 P2P 替代品。可考慮的 Non-P2P 方案有 1410026550-02 和 1410028757-01。",
+        "action": "立即進行 LTB。同步啟動對 Non-P2P 替代方案的評估與驗證，並規劃電路板改版。"
+    },
+    {
+        "partNumber": "1410026550-02",
+        "description": "IC TDA21460 4.25-16V 60A POWER STAGE PQFN 41P",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "NRND",
+        "risk": "高",
+        "details": "狀態為 NRND，預計 2027/08/31 停產。此為英飛凌非 PVL 料件，不推薦用於新設計。",
+        "alternatives": "存在 P2P 但同樣為 NRND 的替代品 1410032237-01 (80A) 和 1410028757-01 (60A)。",
+        "action": "此系列產品均不建議使用。應立即尋找並驗證來自 TI/Renesas/MPS 的長期替代方案，並準備電路板重新設計。"
+    },
+    {
+        "partNumber": "1410027337-01",
+        "description": "IC CSD97396Q4M 4.5-5.5V 30A PowerStage SON 8P",
+        "manufacturer": "德州儀器工業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2034 年底。此為 TI 的 Power Stage。",
+        "alternatives": "存在多個 P2P 替代品，如 1410023703-02 (25A) 和 1410026048-01 (20A)。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410027530-01",
+        "description": "IC CSD95482RWJ 40A VR13 Power Stage SON 41P",
+        "manufacturer": "德州儀器工業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，但生命週期預計至 2034 年底。此為 TI 的 Power Stage。",
+        "alternatives": "存在 P2P 替代品 CSD95411 (TI, 65A)。",
+        "action": "監控庫存與交期。雖然生命週期長，但 NRND 狀態表示不建議用於新設計。新專案應尋找其他推薦料號。"
+    },
+    {
+        "partNumber": "1410027531-01",
+        "description": "IC CSD95480RWJ 70A VR13 Power Stage QFN 41P",
+        "manufacturer": "德州儀器工業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，但生命週期預計至 2034 年底。此為 TI 的 Power Stage。",
+        "alternatives": "存在 P2P 替代品 1410029510-01。",
+        "action": "監控庫存與交期。雖然生命週期長，但 NRND 狀態表示不建議用於新設計。可評估導入 P2P 替代品。"
+    },
+    {
+        "partNumber": "1410028110-01",
+        "description": "IC SCP302045MNTWG MOSFET Driver 45A PQFN 33P",
+        "manufacturer": "安森美半導體",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2027 年底。此為 ON Semi 的 Power Stage。",
+        "alternatives": "無 P2P 替代品。可考慮 Non-P2P 的 SCP302155 (ON Semi)。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410028757-01",
+        "description": "IC TDA21462 PowerStage 4.25-16V 60A PQFN5X6 41P",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "NRND",
+        "risk": "高",
+        "details": "狀態為 NRND，預計 2030/12/31 停產。此為英飛凌非 PVL 料件，不推薦用於新設計。",
+        "alternatives": "存在 P2P 但同樣為 NRND 的替代品 1410032237-01 (80A) 和 1410026550-02 (60A)。",
+        "action": "此系列產品均不建議使用。應立即尋找並驗證來自 TI/Renesas/MPS 的長期替代方案，並準備電路板重新設計。"
+    },
+    {
+        "partNumber": "1410028814-01",
+        "description": "(DEL22)IC FDMF5822DC PWR STG 55A 4.5~16V PQFN5X5",
+        "manufacturer": "安森美半導體",
+        "subsystem": "電源管理",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2022/12/15 停產 (EOL)。",
+        "alternatives": "存在 P2P 替代品 1410034926-01。",
+        "action": "立即啟動對替代品 1410034926-01 的驗證與導入流程。同時進行 LTB 作為過渡期庫存。"
+    },
+    {
+        "partNumber": "1410029752-01",
+        "description": "IC MP86903C-CGLT DRMOS 4.5V-22V 25A TQFN 21P",
+        "manufacturer": "Monolithic Power Systems (MPS)",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 MPS 的 Power Stage。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410031172-01",
+        "description": "Dr.MOS MP86990-AGLUT-Z 3-16Vin TLGA 33P",
+        "manufacturer": "Monolithic Power Systems (MPS)",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 MPS 的 Power Stage。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410032237-01",
+        "description": "IC TDA21472 PowerStage 4.25-16V 80A PQFN5X6 41P",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計 2029 年底 EOL。此為英飛凌非 PVL 料件。",
+        "alternatives": "存在 P2P 但同樣為 NRND 的替代品 1410026550-02 (60A) 和 1410028757-01 (60A)。",
+        "action": "此系列產品均不建議用於新設計。現有專案應監控庫存與交期，並規劃在未來導入 TI/Renesas/MPS 的方案。"
+    },
+    {
+        "partNumber": "1410023090-01",
+        "description": "(DEL24)IC NCP81161MNTBG MOSFET Driver SMD DFN 8P",
+        "manufacturer": "安森美半導體",
+        "subsystem": "電源管理",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2024/07/05 停產 (EOL)。此為 MOSFET 驅動 IC。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "立即進行 LTB。同時啟動全球庫存搜尋及替代驅動 IC 的尋源專案，可能需要電路板修改。"
+    },
+    {
+        "partNumber": "1410025715-01",
+        "description": "(DEL22)IC PX3517 MOSFET VR12.x driver IC SMD",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2022/02/11 停產 (EOL)。PCN 文件已確認停產。",
+        "alternatives": "Non-P2P 方案 (Renesas SL6596IRZ) 需重新設計。P2P 替代品 1410025762-21 (PXC1331CPN) 本身為 NRND，供應不穩定。",
+        "action": "立即對 PX3517 進行 LTB。同步啟動對 Renesas 非 P2P 方案的長期驗證專案。"
+    },
+    {
+        "partNumber": "1654004671",
+        "description": "DVI Conn. 29P 90D(F) DIP QH11121-DAT0-4F",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2028 年底。此為標準 DVI 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654004672",
+        "description": "DVI Conn. 24P 90D(F) DIP QH11121-DBT0-4F",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2026 年底。此為標準 DVI 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654009881-01",
+        "description": "DVI Conn. 24P 1.905mm 90D(F) QH11121-DBT1-4F",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為標準 DVI 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。新專案應避免使用此料號。"
+    },
+    {
+        "partNumber": "1654011386-01",
+        "description": "DVI Conn. 24P 1.905mm 90D DIP DVI5V2S1126E41N7-F",
+        "manufacturer": "芬瑩企業有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2023 年底。此為特殊 DVI 連接器。",
+        "alternatives": "此為 KORTAK EOL 替代料。",
+        "action": "生命週期即將結束，建議在 2023 年初開始尋找下一代解決方案。"
+    },
+    {
+        "partNumber": "1654011455-01",
+        "description": "DVI Conn. 54P 90D DIP QH11121-DADF-4F",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2026 年底。此為 DVI-I+DVI-D 雙層連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654011527-01",
+        "description": "DVI Conn. 53P 1.905mm 90D DIP C1DA2G4-03011-F",
+        "manufacturer": "介大精密工業股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2043 年底。此為 DVI-D/DVI-I 雙層連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654012561-01",
+        "description": "DVI Con 48P 1.905mm 90D(F) DIP DVI5-50F1-KNR0-01",
+        "manufacturer": "东台正耀精密技术有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為雙層 DVI-D 連接器。",
+        "alternatives": "此為 1654011068-01 的 Phase out 替代料。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654014387-01",
+        "description": "DVI-I 29P/1.905/RA/G-FL/D/WH/W SC/W SH",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2028 年底。此為帶鐵殼的 EMI 防護 DVI 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410024845-01",
+        "description": "IC AT24C02D-XHM-T I2C EEPROM 2KB SMD TSSOP 8P",
+        "manufacturer": "邁奇電子股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，但生命週期未定。此為標準 I2C EEPROM。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品，如 Non-P2P 的 1410027867-01。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410027981-01",
+        "description": "IC M95256-RMN6TP SPI EEPROM 256KB SMD SOIC 8P",
+        "manufacturer": "香港商意法半導體股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2026 年底。此為標準 SPI EEPROM。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410024700-01",
+        "description": "IC ASM1442K HDMI 1.4b Level Shifter SMD QFN 48P",
+        "manufacturer": "祥碩科技股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "NRND",
+        "risk": "高",
+        "details": "狀態為 NRND，預計 2027 年底 EOL。此為 HDMI 1.4b 電平轉換器。",
+        "alternatives": "B2B 替代品為 1410015383。",
+        "action": "監控庫存與交期。由於風險等級高，建議提前啟動對替代品 1410015383 的評估與驗證。"
+    },
+    {
+        "partNumber": "1410026561-01",
+        "description": "(DEL21)IC PI3HDX511FZLIEX HDMI1.4b Redriver TQFN",
+        "manufacturer": "Diodes Inc.",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2021/09/09 停產 (EOL)。此為 HDMI 1.4b Redriver。",
+        "alternatives": "B2B 替代品為 1410032038-01。",
+        "action": "立即啟動對替代品 1410032038-01 的驗證與導入流程。"
+    },
+    {
+        "partNumber": "1410032038-01",
+        "description": "IC PI3HDX511FZLCIEX HDMI1.4b Redriver TQFN 40P",
+        "manufacturer": "Diodes Inc.",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "中",
+        "details": "供應穩定，生命週期預計至 2030 年底。作為 PI3HDX511FZLIEX 的替代品。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410028558-01",
+        "description": "IC EP9442U HDMI1.4 4:2 REPEATER w/ MHL/ARC LQFP",
+        "manufacturer": "微驅科技股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "高",
+        "details": "生命週期已於 2020 年底結束，但狀態仍為 Part Approve，風險極高。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "此料號狀態矛盾，應視為已停產。立即啟動全球庫存搜尋及替代 HDMI Repeater 的尋源專案，預期需重新設計。"
+    },
+    {
+        "partNumber": "1410029962-01",
+        "description": "IC PI3HDX412BDZBEX HDMI 1.4b 1:2 Splitter TQFN56",
+        "manufacturer": "Diodes Inc.",
+        "subsystem": "橋接晶片",
+        "lifecycle": "NRND",
+        "risk": "高",
+        "details": "狀態為 NRND，預計 2030 年底 EOL。此為 HDMI 1.4b 1:2 分配器。",
+        "alternatives": "無 P2P 替代品。可考慮 Non-P2P 的 HDMI 2.0 分配器 PI3HDX612ZLDEX (Diodes)。",
+        "action": "由於風險高且無 P2P 替代品，建議開始評估導入 HDMI 2.0 替代方案，並規劃電路板改版。"
+    },
+    {
+        "partNumber": "1653007260-01",
+        "description": "PH 2X7P/2.0/PA6T/G-FL/VA/S/C+T",
+        "manufacturer": "致威電子公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，預計供貨至 2025 年底。此為標準排針連接器。",
+        "alternatives": "B2B 替代品為 1653007260。",
+        "action": "無需立即行動。新專案應避免使用此料號。"
+    },
+    {
+        "partNumber": "1651000682",
+        "description": "IC SKT 8P SMD 8P SMD Chip5.4x5.4 ACA-SPI-004-K01",
+        "manufacturer": "嘉澤端子工業股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為標準 8P IC Socket。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410025762-11",
+        "description": "(DEL24)IC PXC1331BPN 3+3+1 phase IMVP8 PWM SMD Q",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2024/01/23 停產 (EOL)。IMVP8 為平台核心電源控制器。",
+        "alternatives": "P2P 替代品 1410025762-21 為 NRND，預計 2027 年 EOL，並非長久之計。",
+        "action": "立即對 PXC1331BPN 進行 LTB。並行尋找並驗證來自 TI/Renesas/MPS 的長期替代方案。"
+    },
+    {
+        "partNumber": "1410025762-21",
+        "description": "IC PXC1331CPN 3+3+1 phase IMVP8 PWM SMD QFN 48P",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "NRND",
+        "risk": "高",
+        "details": "狀態為 NRND，預計 2027 年底 EOL。此為英飛凌非 PVL 料件，不推薦用於新設計。",
+        "alternatives": "無更長期的 P2P 替代品。",
+        "action": "此料號為短期過渡方案。應立即啟動專案，尋找並驗證來自 TI/Renesas/MPS 的長期 IMVP8 解決方案，並準備電路板重新設計。"
+    },
+    {
+        "partNumber": "1410025776-01",
+        "description": "IC NCP81243MNTXG 3+2 phase IMVP8 PWM SMD QFN 52P",
+        "manufacturer": "安森美半導體",
+        "subsystem": "電源管理",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，但生命週期預計至 2030 年底。此為 ON Semi 的 IMVP8 PWM 控制器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "監控庫存與交期。新專案應避免使用此料號，並尋找其他推薦的 IMVP8 解決方案。"
+    },
+    {
+        "partNumber": "1410030350-01",
+        "description": "IC MP2979AGQKT-0000-Z No Code IMVP8-9 TQFN 48P",
+        "manufacturer": "Monolithic Power Systems (MPS)",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2035 年底。此為 MPS 的 IMVP8 PWM 控制器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410021171",
+        "description": "IC NHI350AM4 SLJ3Z 1.0 LAN SMD PBGA 256P",
+        "manufacturer": "英特爾科技有限公司",
+        "subsystem": "Intel晶片",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，但生命週期預計至 2031 年初。此為 Intel 網路控制器。",
+        "alternatives": "存在多個 Non-P2P 替代方案，包括中國品牌選項。需參考 KCC 推薦列表。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410022540-01",
+        "description": "IC WGI210IT SLJXT SMD QFN 64P 9x9x1.0mm",
+        "manufacturer": "英特爾科技有限公司",
+        "subsystem": "Intel晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2035 年初。此為工規 (iTemp) 版本網路控制器。",
+        "alternatives": "存在商規 P2P 替代品 1410022540-02 (cTemp)。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410022540-02",
+        "description": "LAN WGI210AT SLJXR GbE CTRL QFN 64P",
+        "manufacturer": "英特爾科技有限公司",
+        "subsystem": "Intel晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2035 年初。此為商規 (cTemp) 版本網路控制器。",
+        "alternatives": "存在工規 P2P 替代品 1410022540-01 (iTemp)。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410023117-01",
+        "description": "(DEL21)IC WGI211AT SLJXZ LAN CTRL 1G 1Port QFN64",
+        "manufacturer": "英特爾科技有限公司",
+        "subsystem": "Intel晶片",
+        "lifecycle": "Phase Out",
+        "risk": "中",
+        "details": "已於 2021/10/22 停產 (EOL)。PCN 已確認停產。",
+        "alternatives": "P2P 替代品 1410022540-02 (WGI210AT) 存在，但資料表有差異，需進行 BIOS/Driver 驗證。",
+        "action": "採購 WGI210AT 樣品進行驗證。同時為 WGI211AT 進行 LTB 作為過渡期庫存。"
+    },
+    {
+        "partNumber": "1410024097-01",
+        "description": "(DEL21)IC RTL8111G-CG SMD QFN 32P 4.0x4.0x0.9mm",
+        "manufacturer": "瑞昱半導體股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2021/03/02 停產 (EOL)。供應商已發布停產通知。",
+        "alternatives": "存在 P2P 但 NRND 的替代品 (1410027406-01)，以及多個 Non-P2P 替代品 (如 141003293-01)，導入複雜。",
+        "action": "評估並驗證 Non-P2P 的主流替代品 141003293-01，並為此規劃電路板改版。"
+    },
+    {
+        "partNumber": "1410024683-01",
+        "description": "IC RTL8119I-CG LAN CTRL PCIE1.1 1GbE 1CH QFN 48P",
+        "manufacturer": "瑞昱半導體股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，但生命週期預計至 2030 年底。此為 Realtek 網路控制器。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品，如 Non-P2P 的 141003293-11。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410025503-01",
+        "description": "IC WGI219LM SLKJ3 LAN CTRL 1G 1Port QFN 48P",
+        "manufacturer": "英特爾科技有限公司",
+        "subsystem": "Intel晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2032 年初。此為 Intel 網路控制器。",
+        "alternatives": "存在多個 Co-Lay 替代方案，包括 Realtek 的 1G 和 2.5G 產品。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410026041-01",
+        "description": "IC WGI219V SLKJ5 1G Ethernet PHY QFN 48P",
+        "manufacturer": "英特爾科技有限公司",
+        "subsystem": "Intel晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2032 年初。此為 Intel 網路控制器。",
+        "alternatives": "B2B 替代品為 1410025503-01。同時存在多個 Co-Lay 替代方案。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410026197-01",
+        "description": "IC ELX550AT2 SLL2E LAN CTRL FCBGA 256P",
+        "manufacturer": "英特爾科技有限公司",
+        "subsystem": "Intel晶片",
+        "lifecycle": "NRND",
+        "risk": "高",
+        "details": "狀態為 NRND，預計 2026 年初 EOL。此為 Intel 高階網路控制器。",
+        "alternatives": "需參考 KCC 推薦列表尋找適用於新設計的料號。",
+        "action": "此料號生命週期短且風險高。立即停止在新專案中使用。現有專案需根據 KCC 推薦列表尋找並驗證下一代網路控制器方案。"
+    },
+    {
+        "partNumber": "1410027406-01",
+        "description": "IC RTL8111H-CG LAN CTRL 1CH 1G PCIe1.1 QFN 32",
+        "manufacturer": "瑞昱半導體股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，但生命週期預計至 2034 年底。此為 Realtek 網路控制器。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品，如 Non-P2P 的 141003293-01。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410029875-01",
+        "description": "LAN RTL8211FDI-CG PHY 10/100/1000M -4085 QFN 40P",
+        "manufacturer": "瑞昱半導體股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計 2025 年底 EOL。此為 Realtek 網路 PHY。",
+        "alternatives": "需參考 KCC 推薦列表尋找適用於新設計的料號。",
+        "action": "監控庫存與交期。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410032229-01",
+        "description": "IC KTI225V SLMNG LAN CTRL 2.5G 1CH VQFN 56P",
+        "manufacturer": "英特爾科技有限公司",
+        "subsystem": "Intel晶片",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，預計 2027 年中 EOL。此為 Intel 2.5G 網路控制器。",
+        "alternatives": "B2B 替代品為 1410032540-01。",
+        "action": "無需立即行動。新專案應直接導入其替代品 1410032540-01。"
+    },
+    {
+        "partNumber": "1410032539-01",
+        "description": "IC KTI226LM SRKTT LAN CTRL 2.5G 1CH PG-VQFN 56P",
+        "manufacturer": "英特爾科技有限公司",
+        "subsystem": "Intel晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2037 年中。此為 Intel 2.5G 網路控制器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410032540-01",
+        "description": "IC KTI226V S RKTV LAN CTRL 2.5G 1CH PG-VQFN 56P",
+        "manufacturer": "英特爾科技有限公司",
+        "subsystem": "Intel晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2032 年中。此為 Intel 2.5G 網路控制器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410034293-01",
+        "description": "IC RTL8111K-CG LAN CTRL 1Gb 1P 070 QFN 48P",
+        "manufacturer": "瑞昱半導體股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 Realtek 網路控制器。",
+        "alternatives": "存在多個 Co-Lay 替代方案，包括 Intel 的 i219 系列和 Realtek 的 2.5G 產品。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1651002726-01",
+        "description": "IC SKT LGA 1151 H4 SMD PE115127-4041-01H",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "中",
+        "details": "供應穩定，生命週期預計至 2031 年底。此為 LGA 1151 CPU Socket。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1651003167-01",
+        "description": "IC SKT LGA3647-0 narrow carrier AZIF0081-P002C",
+        "manufacturer": "嘉澤端子工業股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "中",
+        "details": "供應穩定，生命週期預計至 2023 年底。此為 LGA3647 CPU Socket。",
+        "alternatives": "此為 Foxconn 料號 1651003079-01 的替代品。",
+        "action": "生命週期即將結束，建議在 2023 年初開始尋找下一代解決方案。"
+    },
+    {
+        "partNumber": "1930004909",
+        "description": "LGA115X Backplate",
+        "manufacturer": "昆山華懋五金有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 LGA115X CPU 背板。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1930004910",
+        "description": "LGA115X Backplate",
+        "manufacturer": "益锟五金工业(昆山)有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 LGA115X CPU 背板。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1960050194N001",
+        "description": "LGA 1156/1155 SOCKET ILM HF AIMB-580",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 LGA 115X CPU 扣具。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "19Z0000572S000",
+        "description": "HS Support plate CPU-LGA 1156 89x89x6.1 W/Mylar",
+        "manufacturer": "昆山市宏海電子機械有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2099 年底。此為 LGA 1156 散熱器支撐板。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410026500-01",
+        "description": "IC TC7SZ08F,LJ(CT 2-input AND Gate SSOP5 5P",
+        "manufacturer": "Toshiba Corporation",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為標準邏輯閘。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410009293",
+        "description": "IC F85226AF LPC-ISA BRIDGE SMD PQFP 128P",
+        "manufacturer": "精拓科技股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2028 年底。此為 LPC to ISA 橋接晶片。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410018571",
+        "description": "IC F81216AD LPC to 4 URAT SMD LQFP 48P",
+        "manufacturer": "精拓科技股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 LPC to UART 橋接晶片。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410023100-01",
+        "description": "IC F81216HD LPC to 4 UART LQFP 48P",
+        "manufacturer": "精拓科技股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 LPC to UART 橋接晶片。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410001180",
+        "description": "IC SMD IT8209R/AY-L PCI arbiter CLK buff",
+        "manufacturer": "聯陽半導體股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 PCI arbiter。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410021422",
+        "description": "(DEL18)IC PI3PCIE3412ZHE PCIe 3.0 2:1 Mux SW TQ",
+        "manufacturer": "Diodes Inc.",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2018/11/24 停產 (EOL)。此為 PCIe 3.0 Mux 開關。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "此為早期停產料件。立即啟動全球庫存搜尋及替代 PCIe Mux 的尋源專案，預期需重新設計。"
+    },
+    {
+        "partNumber": "1410021700-11",
+        "description": "IC IT8892E/FX PCIe to PCI Bridge SMD LQFP 128P",
+        "manufacturer": "聯陽半導體股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 PCIe to PCI 橋接晶片。",
+        "alternatives": "存在工規 P2P 替代品 1410024034-01。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410023170-01",
+        "description": "IC ASM1061 PCIE to 2p SATA Controller SMD QFN 48",
+        "manufacturer": "祥碩科技股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2034 年底。此為 PCIe to SATA 控制器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410025492-01",
+        "description": "PCIe PI7C9X2G404SLBFDEX 2.0 PKT SW 4L4P LQFP128P",
+        "manufacturer": "Diodes Inc.",
+        "subsystem": "橋接晶片",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為 PCIe Packet Switch。",
+        "alternatives": "B2B 替代品為 1410029353-01。需參考 KCC 推薦列表。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410026520-01",
+        "description": "(DEL21)IC IT8896E/JX PCIe to PCI Bridge LQFP 128",
+        "manufacturer": "聯陽半導體股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2021/08/10 停產 (EOL)。",
+        "alternatives": "P2P 替代品 1410028199-01 存在，主要差異在於 Pin 16 的 RREF 電阻值不同。",
+        "action": "立即導入並驗證替代品 1410028199-01。由於該替代品也已停產，此為短期過渡方案，需同步尋找長期解決方案。"
+    },
+    {
+        "partNumber": "1410027201-01",
+        "description": "(Del19')IC USB3380-AB50NI G PCIe 2 to USB3.0",
+        "manufacturer": "Broadcom Corporation",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2019/12/05 停產 (EOL)。通路商確認 Obsolete 且無直接替代品。",
+        "alternatives": "無官方推薦替代品。需參考 Broadcom 替代方案參考表。",
+        "action": "立即啟動全球庫存搜尋及替代橋接晶片尋源專案。預期需進行電路板重新設計。"
+    },
+    {
+        "partNumber": "1410027924-01",
+        "description": "IC ASM1182E PCIE2.0 SW 2PORT QFN 48P",
+        "manufacturer": "祥碩科技股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，但生命週期預計至 2034 年底。此為 PCIe Switch。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410028199-01",
+        "description": "(DEL23)IC IT8896E/LX PCIe to PCI Bridge LQFP 128",
+        "manufacturer": "聯陽半導體股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2023/03/28 停產 (EOL)。此為舊款橋接晶片。",
+        "alternatives": "P2P 替代品 1410021700-11 存在，但需要檢查訊號上升時間並可能需要更新 BIOS。",
+        "action": "立即啟動對替代品 1410021700-11 的完整工程驗證，包括訊號完整性測試與 BIOS 修改。同時進行 LTB 以確保過渡期供應。"
+    },
+    {
+        "partNumber": "1410029109-11",
+        "description": "IC PI3PCIE3412AZHEX PCIe 3.0 2:1 Mux SW TQFN42",
+        "manufacturer": "Diodes Inc.",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "中",
+        "details": "供應穩定，生命週期預計至 2027 年底。此為 PCIe Mux 開關。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "監控庫存與交期。生命週期相對較短，需在 2025-2026 年間開始尋找下一代解決方案。"
+    },
+    {
+        "partNumber": "1410030436-01",
+        "description": "(DEL22)PCIe2.0 88SE9182A2-NNX2C000 SATA3 2P 0085",
+        "manufacturer": "Marvell Technology Ltd,",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2022/11/22 停產 (EOL)。此為 PCIe to SATA 控制器。",
+        "alternatives": "無直接替代品，需參考 KCC 推薦列表尋找新方案。",
+        "action": "立即進行 LTB。同步根據 KCC 推薦列表，尋找並驗證新的 PCIe to SATA 控制器方案，預期需重新設計。"
+    },
+    {
+        "partNumber": "1654011365-01",
+        "description": "PCIEXPRESS 64P 1.0mm 180D(F) DIP 15u\" AAA-PCI-16",
+        "manufacturer": "嘉澤端子工業股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為 PCIe 連接器。",
+        "alternatives": "需參考 KCC Matrix table 尋找替代品。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1654011436-01",
+        "description": "PCIEXPRESS 164P 1.0mm 180D(F) DIP 2EGH8247-D2LL-",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2026 年底。此為 PCIe 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654010628-01",
+        "description": "PCI EXPRESS 164P 1.0mm 180D(F) WPCS-164AN41B22UW",
+        "manufacturer": "承豐精密工業股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2026 年中。此為 PCIe 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654011365-01",
+        "description": "PCIEXPRESS 64P 1.0mm 180D(F) DIP 15u\" AAA-PCI-16",
+        "manufacturer": "嘉澤端子工業股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為 PCIe 連接器。",
+        "alternatives": "需參考 KCC Matrix table 尋找替代品。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "96PS-A250WFXB",
+        "description": "PSU, DPS-250AB-89 L",
+        "manufacturer": "台達電子工業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Flex ATX 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "96PS-A300WPS2-1",
+        "description": "PSU, B001120180",
+        "manufacturer": "新巨企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 PS2 ATX 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "96PS-A350WFXG",
+        "description": "PSU, 9PA350D403",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Flex ATX 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "96PS-A400WPS2B",
+        "description": "PSU, 9PA400CV01",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 PS2 ATX 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "96PS-A500W1UG-M",
+        "description": "PSU, 9PA500BN02",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 1U 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "96PS-A500WFXG",
+        "description": "PSU, 9PA500CB02",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Flex ATX 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "96PS-A500WPS2B",
+        "description": "PSU, 9PA500C901",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 PS2 ATX 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "96PSA-A120W12V1-3",
+        "description": "PSU, 9NA1206724",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為電源適配器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "96PSA-A150W19P4-4",
+        "description": "PSU, 9NA1504834",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為電源適配器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "96PSA-A230W24P4-3",
+        "description": "PSU, 9NA2300109",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為電源適配器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "96PSR-A500WMING",
+        "description": "PSU, 9PR5000702",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Mini Redundant 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "96PSR-A800WCR",
+        "description": "PSU, 9PR8000208",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Phase Out",
+        "risk": "中",
+        "details": "狀態為 Phase Out，生命週期即將結束。此為 Redundant 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "立即尋找替代的 Redundant 電源供應器方案，並規劃導入驗證。"
+    },
+    {
+        "partNumber": "96PSRM-A300W1US",
+        "description": "PSU, 9YA3002705",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Redundant 電源模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "96PSRM-A300WCRG",
+        "description": "PSU, DPS-300AB-102 A",
+        "manufacturer": "台達電子工業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，不建議用於新設計。此為 Redundant 電源模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "監控庫存與交期。新專案應避免使用此料號，並尋找其他推薦的電源模組。"
+    },
+    {
+        "partNumber": "96PSRM-A550WCRP",
+        "description": "PSU, 9PA5508609",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Redundant 電源模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "96PSRM-A850WCRP",
+        "description": "PSU, DPS-850AB-4 H",
+        "manufacturer": "台達電子工業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Redundant 電源模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XAIM-FSP150-50FEBA",
+        "description": "PSU, 9PA1508500",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Flex ATX 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XDMS-FSP500M-80PD",
+        "description": "PSU, 9PA500D602",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 PS2 ATX 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XECU-ZRH2-5800K2V",
+        "description": "PSU, B00ZRH280K041",
+        "manufacturer": "新巨企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Redundant 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XGE-FSP250-50FGBBI",
+        "description": "PSU, 9PA250FC05",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Flex ATX 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XHPC-FSP85050FGPH3",
+        "description": "PSU, 9PA8503401",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Flex ATX 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XHPC-FSP-FC210CE",
+        "description": "PSU, 8AB01671",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Number Release",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Redundant 電源背板。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XNCG-DELTA-AC-155A",
+        "description": "PSU, AC-155 A",
+        "manufacturer": "台達電子工業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Redundant 電源背板。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XPPC-FSP250-50FEBA",
+        "description": "PSU, 9PA250FL00",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Flex ATX 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XSK-DHG2-5600V",
+        "description": "PSU, B00DHG260D010",
+        "manufacturer": "新巨企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 ATX 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XSKY-FSP550-50ERH",
+        "description": "PSU, 8AB01143",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Redundant 電源背板。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XUSM-FSP090-DBBN3",
+        "description": "PSU, 9NA0907708",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為電源適配器。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XVSCI-FSP300-50FCB",
+        "description": "PSU, 9PA300FT15",
+        "manufacturer": "全漢企業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Phase Out",
+        "risk": "中",
+        "details": "狀態為 Phase Out，生命週期即將結束。此為 Flex ATX 電源供應器。",
+        "alternatives": "無明確替代方案。",
+        "action": "立即尋找替代的 Flex ATX 電源供應器方案，並規劃導入驗證。"
+    },
+    {
+        "partNumber": "XAIM-IM2P32A4-128G",
+        "description": "SATA 6Gbps / PCIe Gen3 M.2 Module",
+        "manufacturer": "威剛科技",
+        "subsystem": "記憶體",
+        "lifecycle": "Conditional Approve",
+        "risk": "低",
+        "details": "狀態為有條件批准。此為 M.2 SSD 模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。確認此料號的具體風險來源，並維持標準庫存監控。"
+    },
+    {
+        "partNumber": "XAUR-IM2P32A8-128G",
+        "description": "SATA 6Gbps / PCIe Gen3 M.2 Module",
+        "manufacturer": "威剛科技",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "低",
+        "details": "狀態為料號發布。此為 M.2 SSD 模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XDMS-G3P80-32G",
+        "description": "SATA 6Gbps / PCIe Gen3 M.2 Module",
+        "manufacturer": "威剛科技",
+        "subsystem": "記憶體",
+        "lifecycle": "Conditional Approve",
+        "risk": "低",
+        "details": "狀態為有條件批准。此為 M.2 SSD 模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。確認此料號的具體風險來源，並維持標準庫存監控。"
+    },
+    {
+        "partNumber": "XDMS-G3P80-32G-01",
+        "description": "SATA 6Gbps / PCIe Gen3 M.2 Module",
+        "manufacturer": "威剛科技",
+        "subsystem": "記憶體",
+        "lifecycle": "Part Number Release",
+        "risk": "低",
+        "details": "狀態為料號發布。此為 M.2 SSD 模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "XDMS-TS512GMTE662",
+        "description": "SATA 6Gbps / PCIe Gen3 M.2 Module",
+        "manufacturer": "創見資訊",
+        "subsystem": "記憶體",
+        "lifecycle": "Conditional Approve",
+        "risk": "低",
+        "details": "狀態為有條件批准。此為 M.2 SSD 模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。確認此料號的具體風險來源，並維持標準庫存監控。"
+    },
+    {
+        "partNumber": "1410023170-01",
+        "description": "IC ASM1061 PCIE to 2p SATA Controller SMD QFN 48",
+        "manufacturer": "祥碩科技股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2034 年底。此為 PCIe to SATA 控制器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410030436-01",
+        "description": "(DEL22)PCIe2.0 88SE9182A2-NNX2C000 SATA3 2P 0085",
+        "manufacturer": "Marvell Technology Ltd,",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2022/11/22 停產 (EOL)。此為 PCIe to SATA 控制器。",
+        "alternatives": "無直接替代品，需參考 KCC 推薦列表尋找新方案。",
+        "action": "立即進行 LTB。同步根據 KCC 推薦列表，尋找並驗證新的 PCIe to SATA 控制器方案，預期需重新設計。"
+    },
+    {
+        "partNumber": "1410020979-11",
+        "description": "IC W25Q80DVSSIG SPI FLASH 8MB SOIC 8P",
+        "manufacturer": "華邦電子股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2030 年底。此為標準 SPI Flash。",
+        "alternatives": "P2P 替代品為 1410031885-01。",
+        "action": "監控庫存與交期。新專案應優先評估替代品 1410031885-01。"
+    },
+    {
+        "partNumber": "1410021450-11",
+        "description": "IC W25X40CLSNIG NOR SPI 4Mb 2.3~3.6V SOIC 8P",
+        "manufacturer": "華邦電子股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2030 年底。此為標準 SPI Flash。",
+        "alternatives": "P2P 替代品為 W25Q40RLSNJQ (Winbond)。",
+        "action": "監控庫存與交期。新專案應避免使用此料號，並評估導入推薦的替代品。"
+    },
+    {
+        "partNumber": "1410021550",
+        "description": "IC MX25L512EMI-10G SPI FLASH 512KB SOP 8P",
+        "manufacturer": "旺宏電子股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為標準 SPI Flash。",
+        "alternatives": "P2P 替代品為 1410031066-01 (無 HOLD Pin)。",
+        "action": "監控庫存與交期。新專案應評估導入推薦的替代品。"
+    },
+    {
+        "partNumber": "1410022889-01",
+        "description": "IC MX25L1606EM2I-12G SPI FLASH 16Mb SOP 8P",
+        "manufacturer": "旺宏電子股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為標準 SPI Flash。",
+        "alternatives": "B2B 替代品為 1410022889-11。P2P 替代品為 GD25Q16ESIGR (GD)。",
+        "action": "監控庫存與交期。新專案應評估導入推薦的替代品。"
+    },
+    {
+        "partNumber": "1410024002-11",
+        "description": "IC W25Q80DVSNIG SPI FLASH 8MB SOIC 8P",
+        "manufacturer": "華邦電子股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為標準 SPI Flash。",
+        "alternatives": "P2P 替代品為 1410036288-01。",
+        "action": "監控庫存與交期。新專案應評估導入推薦的替代品。"
+    },
+    {
+        "partNumber": "1410024373-01",
+        "description": "IC MX25L4006EM2I-12G SPI FLASH 4MB SOP 8P",
+        "manufacturer": "旺宏電子股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2025 年底。此為標準 SPI Flash。",
+        "alternatives": "P2P 替代品為 MX25V40066M2I02 (MXIC)。",
+        "action": "監控庫存與交期。新專案應評估導入推薦的替代品。"
+    },
+    {
+        "partNumber": "1410024453-01",
+        "description": "IC MX25L8006EM2I-12G SPI FLASH 8MB SOP 8P",
+        "manufacturer": "旺宏電子股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2025 年底。此為標準 SPI Flash。",
+        "alternatives": "P2P 替代品為 1410020979-11 或 MX25V80066M2I02 (MXIC)。",
+        "action": "監控庫存與交期。新專案應評估導入推薦的替代品。"
+    },
+    {
+        "partNumber": "1410025037-01",
+        "description": "IC MX25L12835FM2I-10G SPI FLASH 128MB SOP 8P",
+        "manufacturer": "旺宏電子股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2030 年底。此為標準 SPI Flash。",
+        "alternatives": "B2B 替代品為 1410029017-01。",
+        "action": "監控庫存與交期。新專案應評估導入推薦的替代品。"
+    },
+    {
+        "partNumber": "1410027852-01",
+        "description": "IC W25Q128JVSIQ SPI FLASH 128Mb SOIC 8P",
+        "manufacturer": "華邦電子股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為標準 SPI Flash。",
+        "alternatives": "B2B 替代品為 1410029017-01。P2P 替代品為 GD25B128ESIGR (GD)。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410027862-01",
+        "description": "IC W25Q256JVFIQ SPI FLASH 256MB SOIC 16P",
+        "manufacturer": "華邦電子股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2026 年底。此為標準 SPI Flash。",
+        "alternatives": "P2P 替代品為 MX25L25673GMI-08G (MXIC)。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410028631-01",
+        "description": "IC W25Q16JVSNIQ SPI FLASH 16Mb 150mil SOIC 8P",
+        "manufacturer": "華邦電子股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2029 年底。此為標準 SPI Flash。",
+        "alternatives": "P2P 替代品為 1410035931-01 (W25Q16RVSNJQ)。",
+        "action": "監控庫存與交期。新專案應評估導入推薦的替代品。"
+    },
+    {
+        "partNumber": "1410031885-01",
+        "description": "IC MX25V8035FM2I SPI FLASH 8Mb x1x2x4 SOP-W 8P",
+        "manufacturer": "旺宏電子股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2029 年底。此為標準 SPI Flash。",
+        "alternatives": "P2P 替代品為 MX25V80066M2I02 (MXIC) 或 1410020979-11。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410028591-01",
+        "description": "(DEL25)IC SM659GX8 CDZ SPA31E SATA GEN3 SSD 8GB",
+        "manufacturer": "慧榮科技股份有限公司",
+        "subsystem": "記憶體",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2025/05/13 停產 (EOL)。此為 8GB SSD 控制器。",
+        "alternatives": "無 P2P 替代品。原廠推薦 SM611GXD 系列，但容量不同且需重新設計。",
+        "action": "立即進行 LTB。啟動對新一代 SSD 控制器方案的評估與導入專案。"
+    },
+    {
+        "partNumber": "1410032329-01",
+        "description": "IC NCT6126D(B) eSPI/LPC 3.3V -4085 SIO LQFP 128P",
+        "manufacturer": "新唐科技",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2031 年中。此為 Super I/O 晶片。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410020868",
+        "description": "IC NCT6776F SMD QFP 128P",
+        "manufacturer": "新唐科技",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，但生命週期預計至 2031 年中。此為 Super I/O 晶片。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410021809",
+        "description": "IC NCT6776D (Rev.C)LPC I/O SMD LQFP 128P",
+        "manufacturer": "新唐科技",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，但生命週期預計至 2031 年中。此為 Super I/O 晶片。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410025740-01",
+        "description": "SIO NCT6106D(C) LPC 1.1 3.3V -4085 LQFP 128P",
+        "manufacturer": "新唐科技",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，但生命週期預計至 2031 年中。此為 Super I/O 晶片。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410026583-01",
+        "description": "IC NCT6779D Rev.B LPC I/O SMD LQFP 128P",
+        "manufacturer": "新唐科技",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，但生命週期預計至 2032 年底。此為 Super I/O 晶片。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410027707-01",
+        "description": "IC NCT6116D LPC SIO SMD LQFP 128P",
+        "manufacturer": "新唐科技",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，但生命週期預計至 2031 年中。此為 Super I/O 晶片。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410015202",
+        "description": "IC APW7145KAI-TRG 4.3-14V 3A Buck Converter SOP",
+        "manufacturer": "茂達半導體有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2026 年底。此為 Buck 轉換器。",
+        "alternatives": "存在多個 Non-P2P 替代方案，需參考 KCC 推薦列表。",
+        "action": "監控庫存與交期。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410027036-01",
+        "description": "(DEL21)IC APW8713AQBI-TRG 2.7-28V 8A Buck",
+        "manufacturer": "茂達半導體有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2021/05/17 停產 (EOL)。此為 8A Buck 轉換器。",
+        "alternatives": "無 P2P 替代品。KCC 推薦的 Non-P2P 方案包括 1410035407-01 和 1410030412-01。",
+        "action": "立即啟動對 KCC 推薦替代方案的評估與驗證，並規劃電路板改版。"
+    },
+    {
+        "partNumber": "1410002760",
+        "description": "(DEL25)IC ISL6545CBZ-T PWM CONTROLLER SMD SOIC 8",
+        "manufacturer": "台灣瑞薩股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Phase Out",
+        "risk": "高",
+        "details": "已於 2025/03/08 停產 (EOL)。此為通用 PWM 控制器。",
+        "alternatives": "存在 P2P 替代品 1410030120-01。",
+        "action": "立即啟動對 P2P 替代品 1410030120-01 的驗證與導入。同時進行 LTB 作為過渡期庫存。"
+    },
+    {
+        "partNumber": "1410025107-11",
+        "description": "IC SLB9660TT1.2 FW4.43 TPM 1.2 LPC TSSOP 28P",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為 TPM 1.2 安全晶片。",
+        "alternatives": "存在 P2P 替代品 1410025392-11 (新韌體版本) 和 1410025782-11 (工規)。",
+        "action": "監控庫存與交期。新專案應避免使用此舊版 TPM，並評估導入新版韌體或工規版本。"
+    },
+    {
+        "partNumber": "1410025392-11",
+        "description": "IC SLB9665TT2.0 FW5.62 TPM 2.0 LPC TSSOP 28P",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為 TPM 2.0 安全晶片。",
+        "alternatives": "存在 Co-lay 方案 SLB9672 (Infineon) 和 P2P 新韌體版本 SLB9665 FW5.66。",
+        "action": "監控庫存與交期。新專案應評估導入 Co-lay 方案或新韌體版本。"
+    },
+    {
+        "partNumber": "1410025392-21",
+        "description": "IC SLB9665TT2.0 FW5.63 TPM 2.0 LPC TSSOP 28P",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為 TPM 2.0 安全晶片。",
+        "alternatives": "存在 Co-lay 方案 SLB9672 (Infineon) 和 P2P 新韌體版本 SLB9665 FW5.66。",
+        "action": "監控庫存與交期。新專案應評估導入 Co-lay 方案或新韌體版本。"
+    },
+    {
+        "partNumber": "1410028322-11",
+        "description": "IC SLB9665XQ2.0 FW5.62 TPM 2.0 LPC VQFN 32P",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為 TPM 2.0 安全晶片。",
+        "alternatives": "存在 Co-lay 方案 SLB9672 (Infineon) 和 P2P 新韌體版本 SLB9665 FW5.66。",
+        "action": "監控庫存與交期。新專案應評估導入 Co-lay 方案或新韌體版本。"
+    },
+    {
+        "partNumber": "1410020754-11",
+        "description": "IC USB2514B-AEZC-TR USB 2.0 Hub conrtoller 4Port",
+        "manufacturer": "邁奇電子股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，但生命週期預計至 2029 年底。此為 4-Port USB 2.0 Hub。",
+        "alternatives": "存在 P2P NRND 替代品 1410028887-01 和工規版 1410028888-01。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410021509",
+        "description": "IC USB2512B-AEZG USB2.0 HUB CTRL 2PORT QFN 36P",
+        "manufacturer": "邁奇電子股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，預計供貨至 2024 年底。此為 2-Port USB 2.0 Hub。",
+        "alternatives": "存在 P2P NRND 替代品 1410028889-01。",
+        "action": "生命週期即將結束，新專案應避免使用。現有專案應評估導入替代品或從 KCC 推薦列表中尋找新方案。"
+    },
+    {
+        "partNumber": "1410022379",
+        "description": "IC UPD720201K8-701-BAC-A USB3.0 4ch controller",
+        "manufacturer": "台灣瑞薩股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 4-Port USB 3.0 Hub。",
+        "alternatives": "存在工規 P2P 替代品 1410025947-01 和 Co-lay 中國品牌方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410023775-01",
+        "description": "IC UPD720210K8-BAF-A USB3.0 4 port HUB QFN 76P",
+        "manufacturer": "台灣瑞薩股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2025 年底。此為 4-Port USB 3.0 Hub。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410024231-01",
+        "description": "IC SN65LVPE502ARGER Dual Channel USB3.0 Redriver",
+        "manufacturer": "德州儀器工業股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，但生命週期預計至 2030 年底。此為 USB 3.0 Redriver。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410025382-01",
+        "description": "IC TS3USB221ARSER USB2.0 Switch SMD UQFN 10P",
+        "manufacturer": "德州儀器工業股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2034 年底。此為 USB 2.0 Switch。",
+        "alternatives": "存在多個 P2P 替代品，包括 TI 和 NXP 的料號。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410025729-01",
+        "description": "IC PI3EQX7741AIZDEX USB3.0 ReDriver SMD TQFN 20P",
+        "manufacturer": "Diodes Inc.",
+        "subsystem": "橋接晶片",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計供貨至 2028 年底。此為 USB 3.0 Redriver。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品。",
+        "action": "監控庫存與交期。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410025863-01",
+        "description": "IC SN65LVPE512RGER Dual Channel USB3.0 Redriver",
+        "manufacturer": "德州儀器工業股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，但生命週期預計至 2034 年底。此為 USB 3.0 Redriver。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410027865-01",
+        "description": "(DEL21)IC GL852GT-OHG12 USB2.0 HUB CTRL 4PORT",
+        "manufacturer": "創惟科技股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Phase Out",
+        "risk": "中",
+        "details": "已於 2021/05/06 停產 (EOL)。此為 4-Port USB 2.0 Hub。",
+        "alternatives": "P2P 替代品為 1410030898-01，但需 FAE 確認。",
+        "action": "立即啟動對替代品 1410030898-01 的驗證與導入流程。"
+    },
+    {
+        "partNumber": "1410028887-01",
+        "description": "IC USB2514B/M2 USB 2.0 Hub Ctrl 4 Port SQFN 36P",
+        "manufacturer": "邁奇電子股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，但生命週期預計至 2029 年底。此為 4-Port USB 2.0 Hub。",
+        "alternatives": "存在 Non-P2P 替代品 1410030898-01 和 Co-lay 中國品牌方案。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410028888-01",
+        "description": "USB USB2514B-I/M2 2.0 Hub 4Port SQFN36P",
+        "manufacturer": "邁奇電子股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為工規 4-Port USB 2.0 Hub。",
+        "alternatives": "存在 Co-lay 中國品牌方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410028889-01",
+        "description": "IC USB2512B/M2 USB 2.0 Hub conrtoller 2 Port",
+        "manufacturer": "邁奇電子股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為 2-Port USB 2.0 Hub。",
+        "alternatives": "需參考 KCC 推薦列表尋找替代品。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410028890-01",
+        "description": "IC USB2512B-I/M2 USB 2.0 Hub conrtoller 2 Port",
+        "manufacturer": "邁奇電子股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "NRND",
+        "risk": "低",
+        "details": "狀態為 NRND，預計供貨至 2027 年底。此為工規 2-Port USB 2.0 Hub。",
+        "alternatives": "存在 P2P 商規版 1410028889-01 和 Non-P2P 方案。",
+        "action": "無需立即行動。新專案應避免使用此料號，並從 KCC 推薦列表中選擇替代方案。"
+    },
+    {
+        "partNumber": "1410030898-01",
+        "description": "IC GL852GT-OHY60 USB2.0 HUB CTRL 4PORT QFN 28P",
+        "manufacturer": "創惟科技股份有限公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2028 年底。此為 4-Port USB 2.0 Hub。",
+        "alternatives": "存在 P2P 替代品 1410029826-01。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654012207-01",
+        "description": "USB3.0x2+USB2.0x2 26P 90D(M) DIP ABA-USB-186-K06",
+        "manufacturer": "嘉澤端子工業股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2026 年底。此為 USB 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410027950-21",
+        "description": "IC CH7517A-BF B134.01.01.14 DP-VGA Converter QFN",
+        "manufacturer": "美商光達科技公司",
+        "subsystem": "橋接晶片",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 DP to VGA 轉換器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654000055",
+        "description": "(DEL15)D-SUB Conn. 15P 90D(F) DIP",
+        "manufacturer": "實盈股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Phase Out",
+        "risk": "低",
+        "details": "已於 2015 年停產，但風險標示為低，可能因庫存充足或替代方案成熟。",
+        "alternatives": "B2B 替代品為 1654011261-01。",
+        "action": "此為舊停產料件，應確保所有設計均已更新為替代方案。"
+    },
+    {
+        "partNumber": "1654000070-01",
+        "description": "D-SUB 15P/2.29mm/(M)/NY9T/RA/GFL/D/BK/WO Screw",
+        "manufacturer": "芬瑩企業有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2024 年底。此為 VGA 連接器。",
+        "alternatives": "此為 1654000070 的 second source。",
+        "action": "生命週期即將結束，建議在 2024 年初開始尋找下一代解決方案。"
+    },
+    {
+        "partNumber": "1654001278",
+        "description": "(DEL15)D-SUB 9P+15P/2.29+2.77/M+F/PBT/RA/GFL/D",
+        "manufacturer": "實盈股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Phase Out",
+        "risk": "低",
+        "details": "已於 2015 年停產，但風險標示為低，可能因庫存充足或替代方案成熟。",
+        "alternatives": "B2B 替代品為 1654011294-01。",
+        "action": "此為舊停產料件，應確保所有設計均已更新為替代方案。"
+    },
+    {
+        "partNumber": "1654009560",
+        "description": "(DEL24)D-SUB Conn. 15P 1.524mm 90D(F) DIP 176001",
+        "manufacturer": "衡星科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Phase Out",
+        "risk": "低",
+        "details": "已於 2024/04/17 停產。此為 VGA 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "立即尋找替代的 VGA 連接器方案，並規劃導入驗證。"
+    },
+    {
+        "partNumber": "1654009825-01",
+        "description": "D-SUB 15P/PBT/G-FL/VA(F)/D/BK/WO SC/H11.0mm",
+        "manufacturer": "穎鎂企業有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 VGA 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654009857",
+        "description": "(DEL22)D-SUB Conn 15P 2.29mm 90D(F) DIP DZ11A31",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Phase Out",
+        "risk": "低",
+        "details": "已於 2022/05/13 停產。此為 VGA 連接器。",
+        "alternatives": "B2B 替代品為 1654010646-01。",
+        "action": "立即導入並驗證替代品 1654010646-01。"
+    },
+    {
+        "partNumber": "1654010443",
+        "description": "D-SUB Conn 15P 2.286mm 90D(F) DIP DV11251-H5W9-4",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2028 年底。此為 VGA 連接器。",
+        "alternatives": "此為 1654009673 的 Phase out 替代料。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654010446",
+        "description": "(DEL22)D-SUB Conn. 15P 2.286mm 90D(F) DIP DV1125",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "已於 2022 年停產，但狀態仍為 Part Approve。此為 VGA 連接器。",
+        "alternatives": "B2B 替代品為 1654011359-01。",
+        "action": "此料號狀態矛盾，應視為已停產。立即導入並驗證替代品 1654011359-01。"
+    },
+    {
+        "partNumber": "1654010646-01",
+        "description": "D-SUB Conn. 15P 90D(F) DIP DZ11AA1-H5A7-4F",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2028 年底。此為 VGA 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654011245-01",
+        "description": "D-SUB Conn.15P 2.29mm 90D(F) DIP HDB5-15F1-BNR0-",
+        "manufacturer": "东台正耀精密技术有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 VGA 連接器。",
+        "alternatives": "此為 1654515304 的 2nd source。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654011260-01",
+        "description": "D-SUB Conn. 9P+15P 90D(M/F) DIP DM10191-H553-4F",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2026 年底。此為 COM+VGA 雙層連接器。",
+        "alternatives": "此為 1654007255 的 Phase out 替代料。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654011261-01",
+        "description": "D-sub 15P 90D(F) DIP G/F HDB5-15F1-KNR0-G7",
+        "manufacturer": "东台正耀精密技术有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 VGA 連接器。",
+        "alternatives": "此為 1654000055 的 2nd source。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654011294-01",
+        "description": "D-SUB 9P+15P/2.29+2.77/M+F/PBT/RA/GFL/D/BU/W Scr",
+        "manufacturer": "台正耀精密技有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 COM+VGA 雙層連接器。",
+        "alternatives": "此為 1654001278 的 2nd source。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654011359-01",
+        "description": "D-SUB Conn. 15P 2.29mm 90D(F) DIP HDB5-15F1-BNR0",
+        "manufacturer": "东台正耀精密技术有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 VGA 連接器。",
+        "alternatives": "此為 1654010664-01 的 Phase out 替代料。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654011548-01",
+        "description": "D-SUB Conn. 15P 2.29mm 90D(F) DIP 8LHM015S-608C-",
+        "manufacturer": "祥齊電子有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2023 年底。此為 VGA 連接器。",
+        "alternatives": "此為 1654010664-01 的 Phase out 替代料。",
+        "action": "生命週期即將結束，建議在 2023 年初開始尋找下一代解決方案。"
+    },
+    {
+        "partNumber": "1654012042-01",
+        "description": "D-SUB Conn 15P 2.29mm 180D(F) DIP HDB5-15F1-K1D0",
+        "manufacturer": "东台正耀精密技术有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2028 年底。此為 VGA 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654012105-01",
+        "description": "D-SUB 15P 2.77mm 90D(F) DIP D100D2S1122E13N0",
+        "manufacturer": "芬瑩企業有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2026 年底。此為 VGA 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654012266-01",
+        "description": "D-SUB Conn. 15P*2 2.29mm 90D(F) DIP HDB5-30F1-BN",
+        "manufacturer": "东台正耀精密技术有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2028 年底。此為雙層 VGA 連接器。",
+        "alternatives": "此為 1654001858 的 2nd source。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654013038-01",
+        "description": "D-SUB 15P/2.77mm/F/RA/GFL/D/BK/W Screw",
+        "manufacturer": "东台正耀精密技术有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2028 年底。此為 VGA 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654014368-01",
+        "description": "D-SUB 15P/RA/G-FL/D/BLUE/W SC/SLIM",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2030 年底。此為 Slim Type VGA 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654014769-01",
+        "description": "D-SUB 15P/RA(F)/G-FL/D/BLUE/WO SC/SLIM",
+        "manufacturer": "鴻騰精密科技股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2026 年底。此為 Slim Type VGA 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1654515300",
+        "description": "D-SUB 15P/2.29mm/(F)/PBT/RA/GFL/D/BK/W Screw",
+        "manufacturer": "何迪企業股份有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2023 年底。此為 VGA 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "生命週期即將結束，建議在 2023 年初開始尋找下一代解決方案。"
+    },
+    {
+        "partNumber": "1654515300",
+        "description": "D-SUB 15P/2.29mm/(F)/PBT/RA/GFL/D/BK/W Screw",
+        "manufacturer": "东台正耀精密技术有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2023 年底。此為 VGA 連接器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "生命週期即將結束，建議在 2023 年初開始尋找下一代解決方案。"
+    },
+    {
+        "partNumber": "1410025759-01",
+        "description": "IC TPS53679RSBR 6+1 Phase VR13 PWM ctrl SMD QFN4",
+        "manufacturer": "德州儀器工業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2034 年底。此為 TI 的 VR13 PWM 控制器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410025760-01",
+        "description": "IC TPS53626RSMR 2-phase VR13 CPU VCORE QFN 32P",
+        "manufacturer": "德州儀器工業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2034 年底。此為 TI 的 VR13 PWM 控制器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410025761-01",
+        "description": "IC TPS53659RSBR 4+1 Phase VR13 PWM WQFN 40P TI",
+        "manufacturer": "德州儀器工業股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期預計至 2034 年底。此為 TI 的 VR13 PWM 控制器。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。此為當前推薦方案，維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "1410026547-11",
+        "description": "IC PXE1610CDN-G003 VR13 VCORE 6+1 phase QFN 48P",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計 2028 年底 EOL。此為英飛凌非 PVL 料件。",
+        "alternatives": "無官方推薦替代品。新案應尋找 TI/Renesas/MPS 的方案。",
+        "action": "監控庫存與交期。新專案應避免使用此料號，並尋找其他推薦的 VR13 解決方案。"
+    },
+    {
+        "partNumber": "1410026548-11",
+        "description": "IC PXE1110CDM-G003 VR13 VCORE 1+1 phase QFN 40P",
+        "manufacturer": "台灣英飛凌科技股份有限公司",
+        "subsystem": "電源管理",
+        "lifecycle": "NRND",
+        "risk": "中",
+        "details": "狀態為 NRND，預計 2028 年底 EOL。此為英飛凌非 PVL 料件。",
+        "alternatives": "無官方推薦替代品。新案應尋找 TI/Renesas/MPS 的方案。",
+        "action": "監控庫存與交期。新專案應避免使用此料號，並尋找其他推薦的 VR13 解決方案。"
+    },
+    {
+        "partNumber": "1654014042-01",
+        "description": "MINI DIM 6P/PA9T/G-FL/RA/D/BK/L2.7/W SP",
+        "manufacturer": "东莞嘉丰电子有限公司",
+        "subsystem": "其他",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 Mini DIN 連接器。",
+        "alternatives": "此為 1654003199 的 EOL 替代料。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "EWM-W159M201E",
+        "description": "WiFi 5 Module, AW-CB375NF",
+        "manufacturer": "海華科技股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 WiFi 5 (802.11ac) 無線網路模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "EWM-W170H01E",
+        "description": "WiFi 5 Module, WPEQ-160ACN",
+        "manufacturer": "速連通訊股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 WiFi 5 (802.11ac) 無線網路模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "EWM-W172H01E",
+        "description": "WiFi 5 Module, WPET-236ACN(BT)",
+        "manufacturer": "速連通訊股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 WiFi 5 (802.11ac) 無線網路模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "EWM-W180H01E",
+        "description": "WiFi 5 Module, WPET-239ACN(BT)",
+        "manufacturer": "速連通訊股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 WiFi 5 (802.11ac) 無線網路模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "EWM-W189H02E",
+        "description": "WiFi 5 Module, WPEQ-261ACN(BT)2",
+        "manufacturer": "速連通訊股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "Conditional Approve",
+        "risk": "低",
+        "details": "狀態為有條件批准。此為 WiFi 5 (802.11ac) 無線網路模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。確認此料號的具體風險來源，並維持標準庫存監控。"
+    },
+    {
+        "partNumber": "EWM-W190H02E",
+        "description": "WiFi 5 Module, WPEQ-261ACNI(BT)",
+        "manufacturer": "速連通訊股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 WiFi 5 (802.11ac) 無線網路模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "EWM-W193H01E",
+        "description": "WiFi 5 Module, AW-CM421HA",
+        "manufacturer": "海華科技股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 WiFi 5 (802.11ac) 無線網路模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "EWM-W194M201E",
+        "description": "WiFi 5 Module, AW-CM276MA-SUR",
+        "manufacturer": "海華科技股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 WiFi 5 (802.11ac) 無線網路模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "EWM-W306S01E",
+        "description": "Wi-Fi 5 + BT Module 2.4/5GHz M.2 1216",
+        "manufacturer": "海華科技股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 WiFi 5 (802.11ac) 無線網路模組。",
+        "alternatives": "無官方推薦替代品。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    },
+    {
+        "partNumber": "EWM-W310S01E",
+        "description": "WiFi 5 Module, AW-CM421NF",
+        "manufacturer": "海華科技股份有限公司",
+        "subsystem": "網路介面",
+        "lifecycle": "Part Approve",
+        "risk": "低",
+        "details": "供應穩定，生命週期未定。此為 WiFi 5 (802.11ac) 無線網路模組。",
+        "alternatives": "無明確替代方案。",
+        "action": "無需立即行動。維持標準庫存與交期監控。"
+    }
+]
+
+// Function to load components data from JSON file
+async function loadComponentsData() {
+    try {
+        const response = await fetch('skylakeAllComponents.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        components = data;
+        console.log(`Loaded ${components.length} components from JSON file`);
+    } catch (error) {
+        console.error('Error loading components data:', error);
+        // Fallback to empty array if loading fails
+        components = components_old;
+        //alert('無法載入元件資料。請確認 skylakeAllComponents.json 檔案存在且可訪問。');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // First load the components data from JSON file
+    await loadComponentsData();
+    
+    // Then initialize the dashboard with the loaded data
+    renderChart();
+    renderComponents(components);
+
+    // Set up event listeners
+    document.getElementById('riskFilter').addEventListener('change', applyFilters);
+    document.getElementById('subsystemFilter').addEventListener('change', applyFilters);
+    document.getElementById('searchFilter').addEventListener('input', applyFilters);
+});
+
+function getRiskCounts() {
+    const counts = { '高': 0, '中': 0, '低': 0 };
+    components.forEach(c => {
+        if (counts[c.risk] !== undefined) {
+            counts[c.risk]++;
+        }
+    });
+    return counts;
+}
+
+function renderChart() {
+    const ctx = document.getElementById('riskDistributionChart').getContext('2d');
+    const riskCounts = getRiskCounts();
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['高風險', '中度風險', '低風險'],
+            datasets: [{
+                data: [riskCounts['高'], riskCounts['中'], riskCounts['低']],
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.7)',
+                    'rgba(245, 158, 11, 0.7)',
+                    'rgba(34, 197, 94, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(34, 197, 94, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: {
+                            size: 14,
+                            family: "'Noto Sans TC', sans-serif"
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed !== null) {
+                                label += context.parsed + ' 個零件';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderComponents(data) {
+    const tableBody = document.getElementById('component-table-body');
+    tableBody.innerHTML = '';
+
+    if (data.length === 0) {
+        tableBody.innerHTML = `<div class="p-6 text-center text-slate-500">無符合條件的零件。</div>`;
+        return;
+    }
+
+    data.forEach((component, index) => {
+        const riskClass = component.risk === '高' ? 'risk-high' : component.risk === '中' ? 'risk-medium' : 'risk-low';
+        const riskBorderClass = component.risk === '高' ? 'risk-high-border' : component.risk === '中' ? 'risk-medium-border' : 'risk-low-border';
+        
+        const row = `
+            <div class="component-row cursor-pointer hover:bg-slate-50" onclick="toggleDetails(${index})">
+                <div class="grid grid-cols-12 gap-4 p-4 items-center">
+                    <div class="col-span-3">
+                        <p class="font-semibold text-blue-800">${component.partNumber}</p>
+                        <p class="text-sm text-slate-600">${component.description}</p>
+                    </div>
+                    <div class="col-span-2 text-sm text-slate-700">${component.manufacturer}</div>
+                    <div class="col-span-2 text-sm text-slate-700">${component.subsystem}</div>
+                    <div class="col-span-2 text-sm text-slate-700">${component.lifecycle}</div>
+                    <div class="col-span-3 text-center">
+                        <span class="px-3 py-1 text-sm font-semibold rounded-full ${riskClass}">
+                            ${component.risk}風險
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div id="details-${index}" class="details-row hidden bg-slate-50 border-l-4 ${riskBorderClass}">
+                <div class="p-6 grid md:grid-cols-3 gap-6">
+                    <div>
+                        <h5 class="font-bold text-slate-800 mb-1">關鍵證據</h5>
+                        <p class="text-sm text-slate-600">${component.details}</p>
+                    </div>
+                    <div>
+                        <h5 class="font-bold text-slate-800 mb-1">替代方案評估</h5>
+                        <p class="text-sm text-slate-600">${component.alternatives}</p>
+                    </div>
+                    <div>
+                        <h5 class="font-bold text-slate-800 mb-1">建議行動</h5>
+                        <p class="text-sm text-slate-600">${component.action}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        tableBody.innerHTML += row;
+    });
+}
+
+function applyFilters() {
+    const riskValue = document.getElementById('riskFilter').value;
+    const subsystemValue = document.getElementById('subsystemFilter').value;
+    const searchValue = document.getElementById('searchFilter').value.toLowerCase();
+
+    const filteredData = components.filter(c => {
+        const riskMatch = riskValue === 'all' || c.risk === riskValue;
+        const subsystemMatch = subsystemValue === 'all' || c.subsystem === subsystemValue;
+        const searchMatch = c.partNumber.toLowerCase().includes(searchValue) || c.description.toLowerCase().includes(searchValue);
+        return riskMatch && subsystemMatch && searchMatch;
+    });
+
+    renderComponents(filteredData);
+}
+
+function toggleDetails(index) {
+    const detailsRow = document.getElementById(`details-${index}`);
+    detailsRow.classList.toggle('hidden');
+}
+
+function changeTab(tabId) {
+    const tabContents = document.querySelectorAll('.tab-panel');
+    tabContents.forEach(content => {
+        content.classList.add('hidden');
+    });
+
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    tabButtons.forEach(button => {
+        button.classList.remove('tab-active');
+        button.classList.add('tab-inactive');
+    });
+
+    document.getElementById(`${tabId}-content`).classList.remove('hidden');
+    const activeButton = document.querySelector(`button[onclick="changeTab('${tabId}')"]`);
+    activeButton.classList.add('tab-active');
+    activeButton.classList.remove('tab-inactive');
+}
+
+</script>
+
+</body>
+</html>
