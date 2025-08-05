@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intel Skylake 停產周邊零件風險評估報告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .section-title {
+            font-family: 'Noto Sans TC', sans-serif;
+            font-weight: 700;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .risk-high {
+            border-left: 5px solid #ef4444; /* red-500 */
+        }
+        .risk-medium {
+            border-left: 5px solid #f97316; /* orange-500 */
+        }
+        .risk-low {
+            border-left: 5px solid #facc15; /* yellow-400 */
+        }
+        .tag-high { background-color: #ef4444; color: white; }
+        .tag-medium { background-color: #f97316; color: white; }
+        .tag-low { background-color: #facc15; color: #422006; }
+        
+        /* Smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-md">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-slate-900">
+                <span class="text-blue-600">Skylake</span> 風險報告
+            </div>
+            <div class="hidden md:flex space-x-6 items-center">
+                <a href="#summary" class="text-slate-600 hover:text-blue-600 transition">總覽</a>
+                <a href="#risk-categories" class="text-slate-600 hover:text-blue-600 transition">風險分類</a>
+                <a href="#risk-parts" class="text-slate-600 hover:text-blue-600 transition">零件清單</a>
+                <a href="#strategy" class="text-slate-600 hover:text-blue-600 transition">應對策略</a>
+                <a href="#trends" class="text-slate-600 hover:text-blue-600 transition">使用趨勢</a>
+                <a href="#conclusion" class="text-slate-600 hover:text-blue-600 transition">結論</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4">
+            <a href="#summary" class="block py-2 text-slate-600 hover:text-blue-600">總覽</a>
+            <a href="#risk-categories" class="block py-2 text-slate-600 hover:text-blue-600">風險分類</a>
+            <a href="#risk-parts" class="block py-2 text-slate-600 hover:text-blue-600">零件清單</a>
+            <a href="#strategy" class="block py-2 text-slate-600 hover:text-blue-600">應對策略</a>
+            <a href="#trends" class="block py-2 text-slate-600 hover:text-blue-600">使用趨勢</a>
+            <a href="#conclusion" class="block py-2 text-slate-600 hover:text-blue-600">結論</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-12">
+
+        <!-- Executive Summary Section -->
+        <section id="summary" class="mb-20 scroll-mt-20">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-900 mb-4 text-center section-title">Intel Skylake 停產後周邊零件風險評估</h1>
+            <p class="text-lg text-slate-600 text-center max-w-3xl mx-auto mb-12">
+                本報告旨在分析 Intel Skylake (2015) 平台停產所引發的周邊零件供應鏈風險，並提出具體應對策略。隨著技術世代演進，相關零件面臨淘汰，對現有專案構成潛在威脅。
+            </p>
+            <div class="grid md:grid-cols-3 gap-8 text-center">
+                <div class="card p-6">
+                    <div class="text-5xl font-bold text-blue-600 mb-2">227</div>
+                    <h3 class="text-xl font-semibold text-slate-800">總檢視零件</h3>
+                </div>
+                <div class="card p-6 risk-medium">
+                    <div class="text-5xl font-bold text-orange-500 mb-2">90</div>
+                    <h3 class="text-xl font-semibold text-slate-800">風險零件 (39.6%)</h3>
+                </div>
+                <div class="card p-6 risk-high">
+                    <div class="text-5xl font-bold text-red-500 mb-2">31</div>
+                    <h3 class="text-xl font-semibold text-slate-800">高風險零件 (EOL)</h3>
+                </div>
+            </div>
+        </section>
+
+        <!-- Risk Categories Section -->
+        <section id="risk-categories" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-slate-900 mb-8 text-center section-title">主要風險零件類別</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Card: Power -->
+                <div class="card p-6">
+                    <div class="flex items-center mb-3">
+                        <svg class="w-8 h-8 text-yellow-500 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                        <h3 class="text-xl font-semibold text-slate-800">電源管理元件</h3>
+                    </div>
+                    <p class="text-slate-600">IMVP8.0、VR12/VR13 等設計的 PMIC 與 Power Choke 已陸續停產，供應能力受挑戰。</p>
+                </div>
+                <!-- Card: Memory -->
+                <div class="card p-6">
+                    <div class="flex items-center mb-3">
+                         <svg class="w-8 h-8 text-blue-500 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3v1.5h1.5v-1.5Zm13.5 0h-1.5v1.5h1.5v-1.5Zm-10.5 9.75h1.5v1.5h-1.5v-1.5Zm-3.75-3.75h1.5v1.5h-1.5v-1.5Zm11.25 0h-1.5v1.5h1.5v-1.5Zm-3.75 3.75h1.5v1.5h-1.5v-1.5Zm-3.75-3.75h1.5v1.5h-1.5v-1.5Zm11.25 0h-1.5v1.5h1.5v-1.5Zm-3.75 3.75h1.5v1.5h-1.5v-1.5Zm-3.75-3.75h1.5v1.5h-1.5v-1.5Zm11.25 0h-1.5v1.5h1.5v-1.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 4.5v15A2.25 2.25 0 0 0 6.75 21.75h10.5A2.25 2.25 0 0 0 19.5 19.5v-15A2.25 2.25 0 0 0 17.25 2.25H6.75A2.25 2.25 0 0 0 4.5 4.5Z" /></svg>
+                        <h3 class="text-xl font-semibold text-slate-800">記憶體模組</h3>
+                    </div>
+                    <p class="text-slate-600">DDR3L/DDR4 記憶體 IC、模組及連接器明顯減產，市場已轉向 DDR5 新架構。</p>
+                </div>
+                <!-- Card: CPU Parts -->
+                <div class="card p-6">
+                    <div class="flex items-center mb-3">
+                        <svg class="w-8 h-8 text-slate-500 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.03 1.125 0 1.131.094 1.976 1.057 1.976 2.192V7.5M8.25 7.5h7.5M8.25 7.5v3.75c0 1.538-1.256 2.75-2.781 2.75M15.75 7.5v3.75c0 1.538 1.256 2.75 2.781 2.75M5.469 11.25a2.75 2.75 0 1 1 5.5 0 2.75 2.75 0 0 1-5.5 0ZM13.219 11.25a2.75 2.75 0 1 1 5.5 0 2.75 2.75 0 0 1-5.5 0Z" /></svg>
+                        <h3 class="text-xl font-semibold text-slate-800">CPU 對應零件</h3>
+                    </div>
+                    <p class="text-slate-600">LGA1151 Socket、散熱器、背板等因低瓦數設計，不再符合主流需求，供應下滑。</p>
+                </div>
+                <!-- Card: Active IC -->
+                <div class="card p-6">
+                    <div class="flex items-center mb-3">
+                        <svg class="w-8 h-8 text-green-500 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-2.25-1.313M21 7.5v2.25m0-2.25l-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3l2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75l2.25-1.313M12 21.75l-2.25-1.313M12 21.75v-2.25m9-9l-2.25-1.313M18.75 4.5l-2.25 1.313M18.75 4.5v2.25m-13.5 0l2.25-1.313M4.5 4.5l2.25 1.313M4.5 4.5v2.25m9 12.75l-2.25-1.313M13.5 18l-2.25 1.313M13.5 18v-2.25" /></svg>
+                        <h3 class="text-xl font-semibold text-slate-800">主動 IC</h3>
+                    </div>
+                    <p class="text-slate-600">PCIe Gen2/3、LAN 1Gb、Audio IC (HDA)、LPC Super IO 等因技術過時，存在明顯風險。</p>
+                </div>
+                <!-- Card: Connectors -->
+                <div class="card p-6">
+                    <div class="flex items-center mb-3">
+                         <svg class="w-8 h-8 text-purple-500 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
+                        <h3 class="text-xl font-semibold text-slate-800">Legacy 連接器</h3>
+                    </div>
+                    <p class="text-slate-600">ATX Power (8-pin)、VGA、PS/2 等傳統接口已不再出現於新平台設計中。</p>
+                </div>
+                <!-- Card: Modules -->
+                <div class="card p-6">
+                    <div class="flex items-center mb-3">
+                         <svg class="w-8 h-8 text-pink-500 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6.878V6a2.25 2.25 0 0 1 2.25-2.25h7.5A2.25 2.25 0 0 1 18 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 0 0 4.5 9v.878m13.5-2.122c.235.083.487.128.75.128a2.25 2.25 0 0 1 2.25 2.25v.878m0 0a2.25 2.25 0 0 1-2.25 2.25h-1.5a2.25 2.25 0 0 0-2.25 2.25v.878m-7.5 0a2.25 2.25 0 0 0-2.25 2.25h1.5A2.25 2.25 0 0 1 9 18v.878m-3-11.122a2.25 2.25 0 0 1 2.25-2.25h7.5a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-7.5Z" /></svg>
+                        <h3 class="text-xl font-semibold text-slate-800">周邊模組</h3>
+                    </div>
+                    <p class="text-slate-600">Wi-Fi 5、SATA HDD、低瓦數 PSU (<250W) 等逐步被 Wi-Fi 6/7、NVMe SSD 等取代。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Risk Parts List Section -->
+        <section id="risk-parts" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-slate-900 mb-4 text-center section-title">高風險零件清單 (部分範例)</h2>
+            <p class="text-slate-600 text-center max-w-2xl mx-auto mb-8">
+                以下為已確認停產 (EOL) 或供應極不穩定的高風險零件。請使用下方搜尋框快速篩選。
+            </p>
+            <div class="mb-6">
+                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="搜尋零件料號、名稱或類別..." class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+            </div>
+            <div class="overflow-x-auto bg-white rounded-lg shadow">
+                <table id="riskTable" class="w-full text-left">
+                    <thead class="bg-slate-100 border-b border-slate-200">
+                        <tr>
+                            <th class="p-4 font-semibold">類別</th>
+                            <th class="p-4 font-semibold">零件料號</th>
+                            <th class="p-4 font-semibold">說明</th>
+                            <th class="p-4 font-semibold">風險等級</th>
+                            <th class="p-4 font-semibold">建議替代方案</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-slate-200 hover:bg-slate-50">
+                            <td class="p-4">電源管理 IC</td>
+                            <td class="p-4 font-mono">PXC1331CPN</td>
+                            <td class="p-4">Infineon IMVP8.0 Driver IC, Skylake 專用</td>
+                            <td class="p-4"><span class="px-3 py-1 text-sm rounded-full tag-high">高風險</span></td>
+                            <td class="p-4">需專案驗證替代料</td>
+                        </tr>
+                        <tr class="border-b border-slate-200 hover:bg-slate-50">
+                            <td class="p-4">USB 控制器</td>
+                            <td class="p-4 font-mono">USB2512B</td>
+                            <td class="p-4">Microchip USB 2.0 Hub Controller</td>
+                            <td class="p-4"><span class="px-3 py-1 text-sm rounded-full tag-high">高風險 (EOL)</span></td>
+                            <td class="p-4">評估 USB 3.2/Type-C Hub</td>
+                        </tr>
+                         <tr class="border-b border-slate-200 hover:bg-slate-50">
+                            <td class="p-4">USB 控制器</td>
+                            <td class="p-4 font-mono">UPD720201</td>
+                            <td class="p-4">Renesas USB 3.0 Host Controller</td>
+                            <td class="p-4"><span class="px-3 py-1 text-sm rounded-full tag-high">高風險 (EOL)</span></td>
+                            <td class="p-4">評估新世代 Host Controller</td>
+                        </tr>
+                        <tr class="border-b border-slate-200 hover:bg-slate-50">
+                            <td class="p-4">網路晶片</td>
+                            <td class="p-4 font-mono">211AT</td>
+                            <td class="p-4">Intel 1GbE LAN Controller</td>
+                            <td class="p-4"><span class="px-3 py-1 text-sm rounded-full tag-high">高風險 (EOL)</span></td>
+                            <td class="p-4">Intel 210AT / Realtek 8125B</td>
+                        </tr>
+                        <tr class="border-b border-slate-200 hover:bg-slate-50">
+                            <td class="p-4">網路晶片</td>
+                            <td class="p-4 font-mono">RTL8111H</td>
+                            <td class="p-4">Realtek 1GbE LAN Controller</td>
+                            <td class="p-4"><span class="px-3 py-1 text-sm rounded-full tag-medium">中風險</span></td>
+                            <td class="p-4">Realtek 8125B (2.5GbE)</td>
+                        </tr>
+                        <tr class="border-b border-slate-200 hover:bg-slate-50">
+                            <td class="p-4">記憶體晶片</td>
+                            <td class="p-4 font-mono">KA4AG165WB-BCRB</td>
+                            <td class="p-4">Samsung DDR4 4Gb IC (舊製程)</td>
+                            <td class="p-4"><span class="px-3 py-1 text-sm rounded-full tag-high">高風險 (EOL)</span></td>
+                            <td class="p-4">尋找新製程或替代品牌</td>
+                        </tr>
+                        <tr class="border-b border-slate-200 hover:bg-slate-50">
+                            <td class="p-4">LPC Super I/O</td>
+                            <td class="p-4 font-mono">NCT6776D</td>
+                            <td class="p-4">Nuvoton LPC Controller</td>
+                            <td class="p-4"><span class="px-3 py-1 text-sm rounded-full tag-high">高風險</span></td>
+                            <td class="p-4">新平台已不支援 LPC</td>
+                        </tr>
+                        <tr class="border-b border-slate-200 hover:bg-slate-50">
+                            <td class="p-4">VRM 元件</td>
+                            <td class="p-4 font-mono">PXS317</td>
+                            <td class="p-4">Infineon VR12 PCIE Component</td>
+                            <td class="p-4"><span class="px-3 py-1 text-sm rounded-full tag-high">高風險 (EOL)</span></td>
+                            <td class="p-4">AIMB-705G2 需切換替代料</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Response Strategy Section -->
+        <section id="strategy" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-slate-900 mb-8 text-center section-title">應對策略與建議</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="card p-8 text-center risk-high">
+                    <div class="mx-auto bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">高風險零件</h3>
+                    <p class="text-slate-600">盡速整備未來需求，啟動替代料驗證，並考慮提前拉料 (Last Buy) 以防止斷鏈。</p>
+                </div>
+                <div class="card p-8 text-center risk-medium">
+                    <div class="mx-auto bg-orange-100 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.27.96-.12 1.45l-.773.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.78.93l-.15.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.149-.894c-.07-.424-.384-.764-.78-.93-.398-.164-.855-.142-1.205.108l-.737.527a1.125 1.125 0 0 1-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.11v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.764-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.93l.15-.893Z" /></svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">中低風險零件</h3>
+                    <p class="text-slate-600">密切追蹤搭配數量與替代料開發進度。評估導入新平台設計的效益，並逐步轉換。</p>
+                </div>
+                <div class="card p-8 text-center risk-low">
+                    <div class="mx-auto bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 18V6.75c0-1.243 1.007-2.25 2.25-2.25H12M12 7.5V12m0 6V15" /></svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">持續追蹤</h3>
+                    <p class="text-slate-600">每月更新 Skylake 專案接單數與使用情況，利用報告附檔清單，供採購與物料規劃單位使用。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Usage Trends Section -->
+        <section id="trends" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-slate-900 mb-8 text-center section-title">Skylake 產品累計 Active 數量趨勢 (依 PG)</h2>
+            <div class="card p-6 md:p-8">
+                <canvas id="pgUsageChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Conclusion Section -->
+        <section id="conclusion" class="scroll-mt-20">
+             <h2 class="text-3xl font-bold text-slate-900 mb-8 text-center section-title">結論與最終建議</h2>
+             <div class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+                <p class="text-slate-600 mb-4">
+                    Intel Skylake 平台已進入產品生命週期的末期，其周邊零件的供應風險日益增高。本次盤點發現近 40% 的關聯零件存在中高程度的供應風險，這對仍在量產的舊有機種構成了直接威脅。
+                </p>
+                <p class="text-slate-600 font-medium text-slate-800">
+                    我們強烈建議 PD 與 RD 團隊：
+                </p>
+                <ul class="list-disc list-inside mt-2 space-y-2 text-slate-600">
+                    <li><span class="font-semibold">主動檢視設計中專案：</span> 對於不再續產的產品線，應果斷轉為 Phase-Out 狀態。</li>
+                    <li><span class="font-semibold">規劃新世代轉型：</span> 將資源優先投入新平台（如 Tiger Lake, Alder Lake 或更新）的設計與導入，以降低對舊零件的依賴。</li>
+                    <li><span class="font-semibold">強化供應鏈管理：</span> 透過提前備料、驗證替代料等方式，積極管理供應風險，確保生產穩定。</li>
+                </ul>
+                 <p class="text-slate-600 mt-6">
+                    透過前瞻性的規劃與跨部門合作，我們能有效應對技術世代交替帶來的挑戰，提升整體資源配置效率與供應鏈的韌性。
+                </p>
+             </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-400 mt-20">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>&copy; 2025 CE/CS 部門. All Rights Reserved.</p>
+            <p class="text-sm mt-2">本報告僅供內部參考使用</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Table search functionality
+        function filterTable() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toUpperCase();
+            const table = document.getElementById('riskTable');
+            const tr = table.getElementsByTagName('tr');
+
+            for (let i = 1; i < tr.length; i++) { // Start from 1 to skip header row
+                let rowVisible = false;
+                const td = tr[i].getElementsByTagName('td');
+                for (let j = 0; j < td.length; j++) {
+                    if (td[j]) {
+                        const txtValue = td[j].textContent || td[j].innerText;
+                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                            rowVisible = true;
+                            break;
+                        }
+                    }
+                }
+                tr[i].style.display = rowVisible ? '' : 'none';
+            }
+        }
+
+        // Chart.js Line Chart Generation
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('pgUsageChart').getContext('2d');
+            
+            const chartLabels = ['2016', '2018', '2020', '2022', '2024', '2025 (Est.)'];
+            
+            const chartData = {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: 'ACG',
+                        data: [14, 19, 20, 19, 25, 28],
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'ECG',
+                        data: [6, 7, 11, 14, 17, 17],
+                        borderColor: 'rgba(249, 115, 22, 1)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'ESG',
+                        data: [10, 29, 65, 94, 167, 128],
+                        borderColor: 'rgba(49, 2, 80, 1)',
+                        backgroundColor: 'rgba(49, 2, 80, 0.1)',
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'ISG',
+                        data: [4, 12, 25, 78, 90, 92],
+                        borderColor: 'rgba(124, 58, 237, 1)',
+                        backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'SIOT',
+                        data: [2, 2, 4, 6, 8, 6],
+                        borderColor: 'rgba(236, 72, 153, 1)',
+                        backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'WISE',
+                        data: [0, 1, 4, 5, 6, 6],
+                        borderColor: 'rgba(14, 165, 233, 1)',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        fill: false,
+                        tension: 0.1
+                    }
+                ]
+            };
+
+            const pgUsageChart = new Chart(ctx, {
+                type: 'line',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Skylake 產品累計 Active 數量 by PG'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Product_Name 的計數'
+                            }
+                        },
+                        x: {
+                             title: {
+                                display: true,
+                                text: 'Active_Year'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
